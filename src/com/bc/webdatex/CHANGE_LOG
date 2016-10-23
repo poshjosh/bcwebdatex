@@ -1,0 +1,22 @@
+Candidates for move
+NodeVisitingFilter
+TransverseVisitingFilter - needs serious testing
+BaseNodeVisitor - needs serious testing
+
+Lineage
+DefaultTransverseFilter
+BaseTransverseFilter 
+TransverseFilterImpl
+
+DefaultNodeVisitor has DefaultTransverseFilter
+
+
+Id of each branch of a transverse filter shouldn't be same as the parent
+
+Create a TransverseFilter
+For each tag visited: 
+if the tag matches the transverse, check if there are > 1 siblings matching the transverse
+if > 1 sibling matching the transverse, create filters for each sibling
+
+
+
