@@ -63,7 +63,7 @@ public class DateExtractor implements Extractor<Date> {
         
         List<String> allPatterns = new ArrayList<>(dateFormatPatterns.size() + 3);
         allPatterns.addAll(dateFormatPatterns);
-        allPatterns.addAll(Arrays.asList("MMMM dd, yyyy", "EEEE, MMMM dd, yyyy"));
+        allPatterns.addAll(Arrays.asList("MMMM dd, yyyy", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy KK:mm:ss a"));
         this.dateFormatPatterns = Collections.unmodifiableCollection(allPatterns);
         
         this.inputTimeZone = Objects.requireNonNull(inputTimeZone);

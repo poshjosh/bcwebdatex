@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 import org.htmlparser.Attribute;
 import org.htmlparser.NodeFilter;
 import org.htmlparser.Tag;
@@ -63,6 +64,8 @@ public class AbstractMetatagsData implements MetatagsData {
     private final DateFormat dateFormat;
     
     private final Extractor<Date> dateExtractor;
+    
+    private final Pattern patternToReject = Pattern.compile("https\\://fb\\.onthe\\.io/.+?(.prx.r600x315.).+?.jpg");
 
     public AbstractMetatagsData(String url, NodeList nodeList) {
         this(new SimpleDom(url, url, nodeList));
@@ -459,6 +462,8 @@ XLogger.getInstance().log(Level.FINER,
         boolean accepted;
         if(imageUrl.isEmpty()) {
             accepted = false;
+        }else if(patternToReject != null && patternToReject.matcher(imageUrl).find()){
+            accepted = false;
         }else{
             try(InputStream in = connMgr.getInputStream(new URL(imageUrl))) {
                 imageInfo.setInput(in);
@@ -476,7 +481,12 @@ XLogger.getInstance().log(Level.FINER,
     }
     
     public ConnectionManager getConnectionManager() {
-        ConnectionManager connMgr = new ConnectionManager();
+        ConnectionManager connMgr = new ConnectionManager(){
+            @Override
+            protected void log(String msg, Exception e) {
+                XLogger.getInstance().log(Level.WARNING, msg, this.getClass(), e.toString());
+            }
+        };
  //       connMgr.setChunkedStreamingBuffer(8192);
         connMgr.setConnectTimeout(7000);
         connMgr.setReadTimeout(7000);
