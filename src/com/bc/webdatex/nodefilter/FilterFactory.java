@@ -1,5 +1,6 @@
 package com.bc.webdatex.nodefilter;
 
+import org.htmlparser.filters.HasAttributeRegexFilter;
 import com.bc.webdatex.util.Util;
 import com.bc.util.StringArrayUtils;
 import com.bc.util.XLogger;

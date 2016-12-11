@@ -15,7 +15,7 @@ import com.bc.webdatex.tags.StrongTag;
 import com.bc.webdatex.tags.Tbody;
 import com.bc.webdatex.tags.Tfoot;
 import com.bc.webdatex.tags.Thead;
-import com.bc.webdatex.nodedata.SimpleDom;
+import com.bc.dom.HtmlPageDomImpl;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,11 +41,11 @@ import org.htmlparser.util.NodeIterator;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 import org.htmlparser.util.ParserFeedback;
-import com.bc.webdatex.nodedata.Dom;
 import com.bc.webdatex.formatter.Formatter;
+import com.bc.dom.HtmlPageDom;
 
 public class URLParser<E> extends AbstractStoppableTask<E>
-  implements Iterator<Dom>, Serializable {
+  implements Iterator<HtmlPageDom>, Serializable {
     
   protected final Serializable pageLock = new Serializable() {};
   
@@ -157,7 +157,7 @@ public class URLParser<E> extends AbstractStoppableTask<E>
   
   protected void preParse(String url) {}
   
-  protected void postParse(Dom dom) {}
+  protected void postParse(HtmlPageDom dom) {}
 
   @Override
   public boolean hasNext() {
@@ -198,7 +198,7 @@ public class URLParser<E> extends AbstractStoppableTask<E>
   }
   
   @Override
-  public Dom next() {
+  public HtmlPageDom next() {
       
     if (!this.isStarted()) {
       this.setStarted(true);
@@ -211,9 +211,13 @@ public class URLParser<E> extends AbstractStoppableTask<E>
       waitBeforeNextBatch(this.batchInterval);
     }
     
-    String rawUrl = (String)this.pageLinks.get(this.parsePos);
+    final String rawUrl = (String)this.pageLinks.get(this.parsePos);
 
-    Dom page;
+    String url = null;
+    
+    int bookmark = -1;
+    
+    HtmlPageDom page;
     
     try {
         
@@ -221,15 +225,15 @@ public class URLParser<E> extends AbstractStoppableTask<E>
 
       getAttempted().add(rawUrl);
 
-      final int bookmark = this.pageLinks.size();
+      bookmark = this.pageLinks.size();
 
-      String url = this.formatter == null ? rawUrl.replace("&amp;", "&") : (String)this.formatter.format(rawUrl.replace("&amp;", "&"));
+      url = this.formatter == null ? rawUrl : (String)this.formatter.format(rawUrl);
 
       logger.log(Level.FINER, "Raw: {0}\nURL: {1}", cls, rawUrl, url);
 
       NodeList list = parse(url);
       
-      page = new SimpleDom(rawUrl, url, list);
+      page = new HtmlPageDomImpl(url, list);
       
       if (isNoFollow(page)) {
       
@@ -240,6 +244,16 @@ public class URLParser<E> extends AbstractStoppableTask<E>
     }catch (Exception e){
         
       page = null;  
+      
+      if(url != null && bookmark != -1) {
+          
+        final String updatedUrl = url.replace("&amp;", "&");
+      
+        if(updatedUrl.length() != url.length()) {
+          
+          this.pageLinks.add(bookmark, updatedUrl);
+        }
+      }
         
       boolean added = this.failed.add(rawUrl);
 
@@ -494,7 +508,7 @@ public class URLParser<E> extends AbstractStoppableTask<E>
     return list;
   }
   
-  private boolean isNoFollow(Dom page) {
+  private boolean isNoFollow(HtmlPageDom page) {
     if (page.getRobots() == null) {
       return false;
     }

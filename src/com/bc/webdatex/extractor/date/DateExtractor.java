@@ -19,7 +19,6 @@ package com.bc.webdatex.extractor.date;
 import com.bc.util.XLogger;
 import com.bc.webdatex.converter.Converter;
 import com.bc.webdatex.converter.DateTimeConverter;
-import com.bc.webdatex.extractor.Extractor;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,19 +30,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
 import java.util.logging.Level;
+import com.bc.webdatex.extractor.TextParser;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 3, 2016 8:20:03 PM
  */
-public class DateExtractor implements Extractor<Date> {
+public class DateExtractor implements TextParser<Date> {
 
     private final Collection<String> dateFormatPatterns;
     private final TimeZone inputTimeZone;
     private final TimeZone outputTimeZone;
     private final Converter<Date, Date> converter;
     private final SimpleDateFormat dateFormat;
-    private final Extractor<TimeZone> timeZoneExtractor;
-    private final Extractor<String> dateStringExtractor;
+    private final TextParser<TimeZone> timeZoneExtractor;
+    private final TextParser<String> dateStringExtractor;
 
     public DateExtractor(Collection<String> dateFormatPatterns, 
             TimeZone inputTimeZone, TimeZone outputTimeZone) {
@@ -63,7 +63,8 @@ public class DateExtractor implements Extractor<Date> {
         
         List<String> allPatterns = new ArrayList<>(dateFormatPatterns.size() + 3);
         allPatterns.addAll(dateFormatPatterns);
-        allPatterns.addAll(Arrays.asList("MMMM dd, yyyy", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy KK:mm:ss a"));
+        allPatterns.addAll(Arrays.asList("MMMM dd',' yyyy", "EEEE',' MMMM dd',' yyyy", 
+                "EEEE',' d MMMM yyyy", "MM/dd/yyyy KK:mm:ss a"));
         this.dateFormatPatterns = Collections.unmodifiableCollection(allPatterns);
         
         this.inputTimeZone = Objects.requireNonNull(inputTimeZone);

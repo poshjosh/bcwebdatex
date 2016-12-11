@@ -1,6 +1,5 @@
 package com.bc.webdatex.locator.impl;
 
-import com.bc.webdatex.locator.impl.TransverseNodeBuilderImpl;
 import com.bc.util.XLogger;
 import com.bc.webdatex.locator.PathToTransverse;
 import com.bc.webdatex.locator.TransverseBuilder;

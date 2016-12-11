@@ -16,14 +16,14 @@
 
 package com.bc.webdatex.extractor.date;
 
-import com.bc.webdatex.extractor.Extractor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.bc.webdatex.extractor.TextParser;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 5, 2016 6:06:36 PM
  */
-public class DateStringExtractorImpl implements Extractor<String> {
+public class DateStringExtractorImpl implements TextParser<String> {
 
     private final Pattern isoDatePattern;
     private final Pattern digitDatePattern;
@@ -54,35 +54,51 @@ public class DateStringExtractorImpl implements Extractor<String> {
             output = dateString;
 //System.out.println("------------------ Digit date group: "+output);                        
         }else {
-            output = outputIfNone;
+            output = null;
         }
         
-        final String sLower = output.toLowerCase();
-        final String target = "date:";
-        final int i = sLower.indexOf(target);
-        if(i != -1) {
-            output = output.substring(i + target.length() + 1).trim();
-//System.out.println("------------------ After removing chars before text '"+target+"': "+output);           
-        }
-        
-        for(int pos=0; pos<output.length(); pos++) {
-            final char ch = output.charAt(pos);
-            if(Character.isLetterOrDigit(ch)) {
-                output = pos == 0 ? output : output.substring(pos);
-//System.out.println("------------------ After removing leading non-letters or digits from 0 to "+pos+", output: "+output);           
-                break;
+        if(output != null) {
+            
+            final int end = this.getEndIndexOf(output, "date:", "Date:", "dated:", "Dated:");
+            if(end != -1) {
+                output = output.substring(end + 1);
+            }
+
+            for(int pos=0; pos<output.length(); pos++) {
+                final char ch = output.charAt(pos);
+                if(Character.isLetterOrDigit(ch)) {
+                    output = pos == 0 ? output : output.substring(pos);
+    //System.out.println("------------------ After removing leading non-letters or digits from 0 to "+pos+", output: "+output);           
+                    break;
+                }
+            }
+
+            for(int pos=output.length()-1; pos>=0; pos--) {
+                final char ch = output.charAt(pos);
+                if(Character.isLetterOrDigit(ch)) {
+                    output = pos == output.length() - 1 ? output : output.substring(0, pos+1);
+    //System.out.println("------------------ After removing trailing non-letters or digits from "+(pos+1)+", output: "+output);           
+                    break;
+                }
             }
         }
         
-        for(int pos=output.length()-1; pos>=0; pos--) {
-            final char ch = output.charAt(pos);
-            if(Character.isLetterOrDigit(ch)) {
-                output = pos == output.length() - 1 ? output : output.substring(0, pos+1);
-//System.out.println("------------------ After removing trailing non-letters or digits from "+(pos+1)+", output: "+output);           
-                break;
+        return output == null ? outputIfNone : output;
+    }
+
+    private int getEndIndexOf(String target, String... toFinds) {
+        int ret = -1;
+        for(String prefixEnd : toFinds) {
+            int end = this.getEndIndexOf(target, prefixEnd);
+            if(end > ret) {
+                ret = end;
             }
         }
-        
-        return output.trim();
+        return ret;
+    }
+    
+    private int getEndIndexOf(String target, String toFind) {
+        final int i = target.indexOf(toFind);
+        return i == -1 ? -1 : i + toFind.length();
     }
 }

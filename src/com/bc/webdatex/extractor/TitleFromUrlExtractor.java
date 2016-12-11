@@ -19,7 +19,7 @@ package com.bc.webdatex.extractor;
 /**
  * @author Chinomso Bassey Ikwuagwu on Sep 17, 2016 12:43:23 PM
  */
-public class TitleFromUrlExtractor implements Extractor<String> {
+public class TitleFromUrlExtractor implements TextParser<String> {
 
     @Override
     public String extract(String url, String defaultOutput) {

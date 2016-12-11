@@ -17,18 +17,11 @@
 package com.bc.webdatex.extractor;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on Nov 5, 2016 4:02:18 PM
- * @param <I> The type of the input
- * @param <O> The type of the output
+ * @author Chinomso Bassey Ikwuagwu on Sep 17, 2016 12:41:58 PM
+ * @param <O> The <tt>type</tt> of the output.
  */
-public interface Extractor <I, O> {
+public interface TextParser<O> extends Extractor<String, O> {
     
-    Extractor NO_INSTANCE = new Extractor() { 
-        @Override
-        public Object extract(Object input, Object defaultOutput) {
-            return defaultOutput;
-        }
-    };
-
-    O extract(I input, O defaultOutput);
+    @Override
+    O extract(String input, O defaultOutput);
 }

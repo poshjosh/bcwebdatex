@@ -16,17 +16,17 @@
 
 package com.bc.webdatex.extractor.date;
 
-import com.bc.webdatex.extractor.Extractor;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.bc.webdatex.extractor.TextParser;
 
 /**
  * Extract {@link java.util.TimeZone TimeZone} from text of format 
  * <code>+0100, -0700</code> etc
  * @author Chinomso Bassey Ikwuagwu on Oct 14, 2016 3:22:43 PM
  */
-public class IsoTimeZoneExtractor implements Extractor<TimeZone> {
+public class IsoTimeZoneExtractor implements TextParser<TimeZone> {
 
     private final Pattern isoTimezonePattern;
     

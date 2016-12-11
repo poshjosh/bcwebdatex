@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  */
 public class ImageSrcFilter implements Filter<String> {
     
-    private transient final Logger logger = Logger.getLogger(ImageSrcFilter.class.getName());
+    private transient static final Logger logger = Logger.getLogger(ImageSrcFilter.class.getName());
     
     private final Pattern toReject;
     
@@ -83,14 +83,14 @@ public class ImageSrcFilter implements Filter<String> {
             return false;
         }
         
-        return this.acceptWellFormedUrls(level, imageSrc);
+        return this.isValid(imageSrc);
     }
 
-    private boolean rejectNullOrEmpty(String imageUrl) {
+    protected boolean rejectNullOrEmpty(String imageUrl) {
         return imageUrl == null || imageUrl.isEmpty();
     }
 
-    private boolean rejectCouldfrontHostedImages(Level level, String imageUrl) {
+    protected boolean rejectCouldfrontHostedImages(Level level, String imageUrl) {
 
         final String unwanted = ".cloudfront.net/";
 //@todo unwanted formats. Make this a property                
@@ -104,7 +104,7 @@ public class ImageSrcFilter implements Filter<String> {
         return rejected;
     }
 
-    private boolean acceptWellFormedUrls(Level level, String imageUrl) {
+    public boolean isValid(String imageUrl) {
         boolean accepted;
         try{
             URL url = new URL(imageUrl);
@@ -113,7 +113,7 @@ public class ImageSrcFilter implements Filter<String> {
             accepted = false;
         }
         if(!accepted) {
-            logger.log(level, "Accepted: false. Reason: imageUrl is malformed: {0}", imageUrl);
+            logger.log(Level.FINER, "Accepted: false. Reason: imageUrl is malformed: {0}", imageUrl);
         }
         return accepted;
     }

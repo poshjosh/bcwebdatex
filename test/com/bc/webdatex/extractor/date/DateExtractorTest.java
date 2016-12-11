@@ -15,7 +15,6 @@
  */
 package com.bc.webdatex.extractor.date;
 
-import com.bc.webdatex.extractor.Extractor;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
+import com.bc.webdatex.extractor.TextParser;
 
 /**
  *
@@ -52,7 +52,7 @@ this.print(TimeZone.getDefault(), new Date());
         
         SimpleDateFormat dateFormat = new SimpleDateFormat();
         dateFormat.setLenient(true);
-        Extractor<Date> instance = new DateExtractor(dateFormat, patterns, in, out); 
+        TextParser<Date> instance = new DateExtractor(dateFormat, patterns, in, out); 
         
         String dateString = "10/14/16 12:00 AM";
         Date result = instance.extract(dateString, null);

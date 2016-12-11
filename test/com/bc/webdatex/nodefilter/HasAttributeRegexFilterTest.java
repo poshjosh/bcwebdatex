@@ -15,6 +15,7 @@
  */
 package com.bc.webdatex.nodefilter;
 
+import org.htmlparser.filters.HasAttributeRegexFilter;
 import com.bc.webdatex.TestBase;
 import com.bc.webdatex.URLParser;
 import java.util.ArrayList;

@@ -15,7 +15,6 @@
  */
 package com.bc.webdatex.extractor.date;
 
-import com.bc.webdatex.extractor.Extractor;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -30,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import com.bc.webdatex.extractor.TextParser;
 
 /**
  *
@@ -81,7 +81,7 @@ public class DateFromUrlExtractorTest {
         TimeZone to = from;
         SimpleDateFormat dateFormat = new SimpleDateFormat();
         dateFormat.setLenient(true);
-        Extractor<Date> dateFromDateStringExtractor = new DateExtractor(
+        TextParser<Date> dateFromDateStringExtractor = new DateExtractor(
                 dateFormat, Arrays.asList("dd-MM-yyyy", "MM-yyyy"), from, to);
         DateFromUrlExtractor instance = new DateFromUrlExtractor(
                 dateStringExtractor, dateFromDateStringExtractor);

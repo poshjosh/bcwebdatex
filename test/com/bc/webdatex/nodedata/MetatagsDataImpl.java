@@ -16,47 +16,34 @@
 
 package com.bc.webdatex.nodedata;
 
-import com.bc.webdatex.extractor.Extractor;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.util.Collection;
+import com.bc.dom.metatags.AbstractMetadata;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import java.util.TimeZone;
 import org.htmlparser.Attribute;
 import org.htmlparser.util.NodeList;
+import com.bc.dom.HtmlPageDom;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Sep 5, 2016 8:25:29 PM
  */
-public class MetatagsDataImpl extends AbstractMetatagsData {
+public class MetatagsDataImpl extends AbstractMetadata {
 
     public MetatagsDataImpl(String url, NodeList nodeList) {
         super(url, nodeList);
     }
 
-    public MetatagsDataImpl(String url, NodeList nodeList, DateFormat dateFormat) {
-        super(url, nodeList, dateFormat);
+    public MetatagsDataImpl(String url, NodeList nodeList, String[] defaultAttributeNames) {
+        super(url, nodeList, defaultAttributeNames);
     }
 
-    public MetatagsDataImpl(Dom dom) {
+    public MetatagsDataImpl(HtmlPageDom dom) {
         super(dom);
     }
 
-    public MetatagsDataImpl(Dom dom, DateFormat dateFormat) {
-        super(dom, dateFormat);
-    }
-
-    public MetatagsDataImpl(Dom dom, Collection<String> dateFormatPatterns, TimeZone inputTimeZone, TimeZone outputTimeZone) {
-        super(dom, dateFormatPatterns, inputTimeZone, outputTimeZone);
-    }
-
-    public MetatagsDataImpl(Dom dom, Extractor<Date> dateExtractor) {
-        super(dom, dateExtractor);
+    public MetatagsDataImpl(HtmlPageDom dom, String[] defaultAttributeNames) {
+        super(dom, defaultAttributeNames);
     }
     
     private String title;
@@ -153,37 +140,34 @@ public class MetatagsDataImpl extends AbstractMetatagsData {
         return description;
     }
 
-    private Date dateCreated;
+    private String dateCreated;
     @Override
-    public Date getDateCreated() throws ParseException {
+    public String getDateCreated() {
         if(dateCreated == null) {
-            final String sval = this.getFirstMetaTagContent("itemprop", "dateCreated", null, false);
-            dateCreated = sval == null ? null : parseDate(sval);
+            dateCreated = this.getFirstMetaTagContent("itemprop", "dateCreated", null, false);
         }
         return dateCreated;
     }
     
-    private Date datePublished;
+    private String datePublished;
     @Override
-    public Date getDatePublished() throws ParseException {
+    public String getDatePublished() {
         if(datePublished == null) {
-            final String sval = this.getFirstMetaTagContent(null, false,
+            datePublished = this.getFirstMetaTagContent(null, false,
                     new Attribute("itemprop", "datePublished"), 
                     new Attribute("property", "article:published_time"));
-            datePublished = sval == null ? null : parseDate(sval);
         }
         return datePublished;
     }
     
-    private Date dateModified;
+    private String dateModified;
     @Override
-    public Date getDateModified() throws ParseException {
+    public String getDateModified() {
         if(dateModified == null) {
-            final String sval = this.getFirstMetaTagContent(null, false,
+            dateModified = this.getFirstMetaTagContent(null, false,
                     new Attribute("itemprop", "dateModified"), 
                     new Attribute("property", "og:updated_time"),
                     new Attribute("property", "article:modified_time"));
-            dateModified = sval == null ? null : parseDate(sval);
         }
         return dateModified;
     }
@@ -202,12 +186,11 @@ public class MetatagsDataImpl extends AbstractMetatagsData {
         return imageUrls;
     }
     
-    private Locale locale;
+    private String locale;
     @Override
-    public Locale getLocale() throws ParseException {
+    public String getLocale() {
         if(locale == null) {
-            final String sval = this.getFirstMetaTagContent("property", "og:locale", null, false);
-            locale = sval == null ? null : this.toLocale(sval);
+            locale = this.getFirstMetaTagContent("property", "og:locale", null, false);
         }
         return locale;
     }

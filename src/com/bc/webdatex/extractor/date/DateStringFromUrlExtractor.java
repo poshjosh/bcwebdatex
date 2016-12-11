@@ -16,14 +16,14 @@
 
 package com.bc.webdatex.extractor.date;
 
-import com.bc.webdatex.extractor.Extractor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.bc.webdatex.extractor.TextParser;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Sep 17, 2016 5:57:57 PM
  */
-public class DateStringFromUrlExtractor implements Extractor<String> {
+public class DateStringFromUrlExtractor implements TextParser<String> {
 
     private final Pattern datePattern;
 

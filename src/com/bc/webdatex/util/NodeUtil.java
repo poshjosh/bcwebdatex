@@ -26,6 +26,7 @@ import org.htmlparser.util.NodeList;
  * @author Chinomso Bassey Ikwuagwu on Oct 19, 2016 10:33:58 PM
  */
 public class NodeUtil {
+
     /**
      * Clone methods provided for Nodes in the htmlparser library
      * Clones only a Node's attributes, page, start and end position.
@@ -89,7 +90,9 @@ public class NodeUtil {
                     cloneSiblings.add(cloneSibling);
                 }
 
-                cloneParent.setChildren(cloneSiblings);
+                if(cloneParent != null) {
+                    cloneParent.setChildren(cloneSiblings);
+                }
             }
         }
 
@@ -137,15 +140,11 @@ XLogger.getInstance().log(Level.FINER, "Rejected: {0}", NodeUtil.class, node);
         
         NodeList children = node.getChildren();
         
-        if(children == null || children.size() == 0) {
+        if(children != null && !children.isEmpty()) {
             
-            return;
-            
-        }else{
-            
-            for(int i=0; i<children.size(); i++) {
+            for(Node child : children) {
                 
-                insertBefore(children.elementAt(i), toInsert, filter);
+                insertBefore(child, toInsert, filter);
             }
         }
     }

@@ -17,15 +17,15 @@
 package com.bc.webdatex.extractor.date;
 
 import com.bc.util.XLogger;
-import com.bc.webdatex.extractor.Extractor;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.bc.webdatex.extractor.TextParser;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 4, 2016 8:35:55 PM
  */
-public class DateStringExtractor0 implements Extractor<String> {
+public class DateStringExtractor0 implements TextParser<String> {
 
     private final Pattern isoDatePattern;
     private final Pattern digitDatePattern;

@@ -15,10 +15,15 @@
  */
 package com.bc.webdatex.nodedata;
 
-import com.bc.net.ConnectionManager;
+import com.bc.dom.metatags.OpenGraph;
+import com.bc.dom.metatags.MetadataChain;
+import com.bc.dom.HtmlPageDomImpl;
+import com.bc.dom.metatags.BasicMetadata;
+import com.bc.dom.metatags.SchemaArticle;
+import com.bc.dom.metatags.TwitterCard;
 import com.bc.webdatex.TestBase;
 import com.bc.webdatex.URLParser;
-import com.bc.webdatex.util.ImageInfo;
+import com.bc.webdatex.filter.ImageSelector;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -35,6 +40,8 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import com.bc.dom.metatags.Metadata;
+import com.bc.dom.HtmlPageDom;
 
 /**
  * @author Josh
@@ -65,20 +72,6 @@ public class MetatagsDataTest extends TestBase {
     private void testAcceptImageUrl(String site) throws ParserException {
 System.out.println("testAcceptImageUrl. Site: "+site);        
 System.out.println("----------------------------------------------------");
-        final String url = this.getUrl(site);
-System.out.println("URL: "+url);        
-        final URLParser parser = new URLParser();
-        final NodeList nodes = parser.parse(url);
-        final List dateFmtPatterns = Arrays.asList("yyyy-MM-dd'T'HH:mm:ss");
-        final TimeZone inputTimeZone = TimeZone.getTimeZone("CET");
-        final TimeZone outputTimeZone = TimeZone.getTimeZone("IST");
-        
-        MetatagsDataBuilder builder = new MetatagsDataBuilder();
-        
-        BasicMetatagsData metatagsData = builder.dom(url, nodes)
-                .dateExtractor(dateFmtPatterns, inputTimeZone, outputTimeZone)
-                .build(BasicMetatagsData.class);
-        
         String [] imageUrls = {
             "",
             "http://leadership.ng/wp-content/uploads/2016/09/buhari.jpg",
@@ -89,14 +82,12 @@ System.out.println("URL: "+url);
             "https://fb.onthe.io/vllkytaHR0cDovL2kuY2RubmFpai5jb20vby9XcnFpelc0bkpWR3ZKekdmYTQyODBtVjAuanBn.prx.r600x315.03027e25.jpg"
         };
         
-        ConnectionManager connMgr = metatagsData.getConnectionManager();
-        connMgr.setConnectTimeout(7000);
-        connMgr.setReadTimeout(7000);
-        ImageInfo imageInfo = new ImageInfo();
+        final ImageSelector imageSelector = new ImageSelector(null, null, 
+                "https\\://fb\\.onthe\\.io/.+?(.prx.r600x315.).+?.jpg", 7000, 7000);
         
         for(String imageUrl : imageUrls) {
         
-            boolean accepted = metatagsData.acceptImageUrl(connMgr, imageInfo, imageUrl, true);
+            boolean accepted = imageSelector.accept(imageUrl);
             
 System.out.println("Accepted: "+accepted+", imageUrl: "+imageUrl);            
         }
@@ -108,31 +99,26 @@ System.out.println("--------------------- "+site+" ---------------------");
 System.out.println("URL: "+url);        
         final URLParser parser = new URLParser();
         final NodeList nodes = parser.parse(url);
-        final List dateFmtPatterns = Arrays.asList("yyyy-MM-dd'T'HH:mm:ss");
-        final TimeZone inputTimeZone = TimeZone.getTimeZone("CET");
-        final TimeZone outputTimeZone = TimeZone.getTimeZone("IST");
+        final HtmlPageDom dom = new HtmlPageDomImpl(url, nodes);
         
-        MetatagsDataBuilder builder = new MetatagsDataBuilder();
-        
-        MetatagsData lhs = builder.dom(url, nodes)
-                .dateExtractor(dateFmtPatterns, inputTimeZone, outputTimeZone)
-                .build(MetatagsDataImpl.class);
+        final Metadata lhs = new MetatagsDataImpl(dom);
 
-        MetatagsData rhs = builder.buildComposite(
-                BasicMetatagsData.class, SchemaArticle.class, OpenGraph.class, TwitterCard.class);
+        final Metadata rhs = new MetadataChain(
+                new BasicMetadata(dom), new SchemaArticle(dom),
+                new OpenGraph(dom), new TwitterCard(dom));
         
         this.print(lhs, rhs);
     }
     
-    private void print(MetatagsData... arr) {
-        Method[] methods = MetatagsData.class.getMethods();
+    private void print(Metadata... arr) {
+        Method[] methods = Metadata.class.getMethods();
         for(Method method : methods) {
             final String methodName = method.getName();
             if(!methodName.startsWith("get")) {
                 continue;
             }
             System.out.println('\t'+methodName);            
-            for(MetatagsData instance : arr) {
+            for(Metadata instance : arr) {
                 try{
                     System.out.println(method.invoke(instance));
                 }catch(IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
@@ -143,33 +129,33 @@ System.out.println("URL: "+url);
         }
     }
 
-    private MetatagsData getCompositeInstance(
-            Dom dom, Collection<String> dateFormatPatterns,
+    private Metadata getCompositeInstance(
+            HtmlPageDom dom, Collection<String> dateFormatPatterns,
             TimeZone inputTimeZone, TimeZone outputTimeZone, 
-            Class<? extends MetatagsData>... types) {
+            Class<? extends Metadata>... types) {
         return this.getCompositeInstance(dom, dateFormatPatterns, 
                 inputTimeZone, outputTimeZone, Arrays.asList(types));
     }
     
-    private MetatagsData getCompositeInstance(
-            Dom dom, Collection<String> dateFormatPatterns,
+    private Metadata getCompositeInstance(
+            HtmlPageDom dom, Collection<String> dateFormatPatterns,
             TimeZone inputTimeZone, TimeZone outputTimeZone, 
-            Collection<Class<? extends MetatagsData>> types) {
-        List<MetatagsData> list = new ArrayList(types.size());
+            Collection<Class<? extends Metadata>> types) {
+        List<Metadata> list = new ArrayList(types.size());
         for(Class type : types) {
             list.add(this.getInstance(dom, dateFormatPatterns, inputTimeZone, outputTimeZone, type));
         }
-        MetatagsData chain = new MetatagsDataChain(list);
+        Metadata chain = new MetadataChain(list);
         return chain;
     }
     
-    private MetatagsData getInstance(
-            Dom dom, Collection<String> dateFormatPatterns,
+    private Metadata getInstance(
+            HtmlPageDom dom, Collection<String> dateFormatPatterns,
             TimeZone inputTimeZone, TimeZone outputTimeZone,
-            Class<? extends MetatagsData> type) {
+            Class<? extends Metadata> type) {
         try{
-            Constructor constructor = type.getConstructor(Dom.class, Collection.class, TimeZone.class, TimeZone.class);
-            return (MetatagsData)constructor.newInstance(dom, dateFormatPatterns, inputTimeZone, outputTimeZone);
+            Constructor constructor = type.getConstructor(HtmlPageDom.class, Collection.class, TimeZone.class, TimeZone.class);
+            return (Metadata)constructor.newInstance(dom, dateFormatPatterns, inputTimeZone, outputTimeZone);
         }catch(NoSuchMethodException | SecurityException | InstantiationException | 
                 IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             throw new RuntimeException(e);

@@ -9,19 +9,19 @@ import org.htmlparser.tags.ImageTag;
 /**
  * @author Chinomso Bassey Ikwuagwu on Aug 3, 2016 10:08:59 AM
  */
-public class ImagesFilter implements NodeFilter {
+public class ImageNodeFilter implements NodeFilter {
     
   private final Filter<String> imageSrcFilter;
 
-  public ImagesFilter(String baseUrl) {
+  public ImageNodeFilter(String baseUrl) {
       this(new ImageSrcFilter(baseUrl));
   }
   
-  public ImagesFilter(String baseUrl, String regexToAccept, String regexToReject) {
+  public ImageNodeFilter(String baseUrl, String regexToAccept, String regexToReject) {
       this(new ImageSrcFilter(baseUrl, regexToAccept, regexToReject));
   }
   
-  public ImagesFilter(Filter<String> imageSrcFilter) {
+  public ImageNodeFilter(Filter<String> imageSrcFilter) {
       this.imageSrcFilter = imageSrcFilter;
   }
 

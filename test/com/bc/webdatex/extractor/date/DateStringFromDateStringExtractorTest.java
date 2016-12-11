@@ -15,12 +15,12 @@
  */
 package com.bc.webdatex.extractor.date;
 
-import com.bc.webdatex.extractor.Extractor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import com.bc.webdatex.extractor.TextParser;
 
 /**
  *
@@ -53,7 +53,7 @@ public class DateStringFromDateStringExtractorTest {
 
     private void testExtract(String dateString, String expResult) {
         String outputIfNone = null;
-        Extractor<String> instance = new DateStringExtractorImpl();
+        TextParser<String> instance = new DateStringExtractorImpl();
         String result = instance.extract(dateString, outputIfNone);
 System.out.println("Input: "+dateString+", result: "+result+", expected: "+expResult);        
         assertEquals(expResult, result);
