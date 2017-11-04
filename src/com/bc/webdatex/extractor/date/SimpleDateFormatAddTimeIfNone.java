@@ -54,7 +54,7 @@ public class SimpleDateFormatAddTimeIfNone extends SimpleDateFormat {
 
         Date date = super.parse(text, pos);
 
-        if(date != null && !this.acceptDateHasTime.accept(date)) {
+        if(date != null && !this.acceptDateHasTime.test(date)) {
             
             this.mCalendar.setTimeZone(this.getTimeZone());
          

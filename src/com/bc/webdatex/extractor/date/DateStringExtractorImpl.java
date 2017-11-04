@@ -19,11 +19,14 @@ package com.bc.webdatex.extractor.date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.bc.webdatex.extractor.TextParser;
+import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 5, 2016 6:06:36 PM
  */
 public class DateStringExtractorImpl implements TextParser<String> {
+
+    private static final Logger logger = Logger.getLogger(DateStringExtractorImpl.class.getName());
 
     private final Pattern isoDatePattern;
     private final Pattern digitDatePattern;
@@ -43,6 +46,8 @@ public class DateStringExtractorImpl implements TextParser<String> {
         
         String output;
         
+        boolean digitDateGroup = false;
+        
         Matcher matcher = this.isoDatePattern.matcher(dateString);
         if(matcher.find()) {
             output = matcher.group();
@@ -51,6 +56,7 @@ public class DateStringExtractorImpl implements TextParser<String> {
             output = dateString;
 //System.out.println("------------------ Has date chars: "+output);                                    
         }else if((matcher = this.digitDatePattern.matcher(dateString)).find()){    
+            digitDateGroup = true;
             output = dateString;
 //System.out.println("------------------ Digit date group: "+output);                        
         }else {
@@ -64,12 +70,23 @@ public class DateStringExtractorImpl implements TextParser<String> {
                 output = output.substring(end + 1);
             }
 
-            for(int pos=0; pos<output.length(); pos++) {
-                final char ch = output.charAt(pos);
-                if(Character.isLetterOrDigit(ch)) {
-                    output = pos == 0 ? output : output.substring(pos);
-    //System.out.println("------------------ After removing leading non-letters or digits from 0 to "+pos+", output: "+output);           
-                    break;
+            if(digitDateGroup) {
+                for(int pos=0; pos<output.length(); pos++) {
+                    final char ch = output.charAt(pos);
+                    if(Character.isDigit(ch)) {
+                        output = pos == 0 ? output : output.substring(pos);
+//System.out.println("------------------ After removing leading non-digits from 0 to "+pos+", output: "+output);           
+                        break;
+                    }
+                }
+            }else{
+                for(int pos=0; pos<output.length(); pos++) {
+                    final char ch = output.charAt(pos);
+                    if(Character.isLetterOrDigit(ch)) {
+                        output = pos == 0 ? output : output.substring(pos);
+//System.out.println("------------------ After removing leading non-letters or digits from 0 to "+pos+", output: "+output);           
+                        break;
+                    }
                 }
             }
 
@@ -77,7 +94,7 @@ public class DateStringExtractorImpl implements TextParser<String> {
                 final char ch = output.charAt(pos);
                 if(Character.isLetterOrDigit(ch)) {
                     output = pos == output.length() - 1 ? output : output.substring(0, pos+1);
-    //System.out.println("------------------ After removing trailing non-letters or digits from "+(pos+1)+", output: "+output);           
+//System.out.println("------------------ After removing trailing non-letters or digits from "+(pos+1)+", output: "+output);           
                     break;
                 }
             }

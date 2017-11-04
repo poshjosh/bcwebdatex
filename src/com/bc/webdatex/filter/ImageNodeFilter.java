@@ -41,7 +41,7 @@ public class ImageNodeFilter implements NodeFilter {
         if(imageSrcFilter == null) {
             return true;
         }else{
-            boolean accepted = imageSrcFilter.accept(value);
+            boolean accepted = imageSrcFilter.test(value);
             return accepted;
         }
       }

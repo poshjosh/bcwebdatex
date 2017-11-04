@@ -19,6 +19,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -76,9 +77,9 @@ System.out.println("Input: "+TimeUnit.MILLISECONDS.toMinutes(time));
         DateTimeConverter instance = new DateTimeConverter(from, to);
 System.out.println("TimeZones. From: "+from.getID()+", To: "+to.getID());
 
-        final com.bc.webdatex.filter.Filter<Date> dateFilter = instance.getDateFilter();
+        final Predicate<Date> dateFilter = instance.getDateFilter();
                 
-        final long expResult = !dateFilter.accept(date) ? time : time + TimeUnit.MINUTES.toMillis((long)(offset * 60));
+        final long expResult = !dateFilter.test(date) ? time : time + TimeUnit.MINUTES.toMillis((long)(offset * 60));
         
         Date result = instance.convert(date);
 System.out.println("Expected: "+TimeUnit.MILLISECONDS.toMinutes(expResult)+", found: "+TimeUnit.MILLISECONDS.toMinutes(result.getTime()));        
@@ -86,7 +87,7 @@ System.out.println("Expected: "+TimeUnit.MILLISECONDS.toMinutes(expResult)+", fo
         
         final long resultTime = result.getTime();
         
-        final long expResult2 = !dateFilter.accept(result) ? resultTime :  time;
+        final long expResult2 = !dateFilter.test(result) ? resultTime :  time;
         
         Date result2 = instance.reverse(result);
 System.out.println("Expected: "+TimeUnit.MILLISECONDS.toMinutes(expResult2)+", found: "+TimeUnit.MILLISECONDS.toMinutes(result2.getTime()));                

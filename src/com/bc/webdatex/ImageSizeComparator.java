@@ -79,7 +79,7 @@ public class ImageSizeComparator implements Comparator<String> {
             
         }else{
             
-            if(this.imageFilter.accept(imageUrl)) {
+            if(this.imageFilter.test(imageUrl)) {
                 
                 final ImageInfo imageInfo = this.imageFilter.getImageInfo();
                 

@@ -86,7 +86,7 @@ public class ImageFilter extends ImageSrcFilter {
         boolean accepted;
         try(InputStream in = connMgr.getInputStream(imageUrl)) {
             imageInfo.setInput(in);
-            accepted = imageInfo.check();
+            accepted = imageInfo.check(); 
         }catch(IOException e) {
             XLogger.getInstance().log(Level.FINE, 
                 "Error validating image link: "+imageUrl, this.getClass(), e.toString());

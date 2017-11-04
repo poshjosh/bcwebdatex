@@ -3,16 +3,18 @@ package com.bc.webdatex.extractor.node;
 import com.bc.webdatex.nodefilter.NodeVisitingFilter;
 import com.bc.webdatex.nodefilter.NodesFilter;
 import com.bc.util.StringArrayUtils;
-import com.bc.util.XLogger;
 import com.bc.webdatex.util.Util;
 import com.bc.webdatex.locator.TagLocator;
+import com.bc.webdatex.locator.impl.TagLocatorImpl;
 import com.bc.webdatex.nodefilter.NodeVisitingFilterImpl;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.htmlparser.Attribute;
 import org.htmlparser.NodeFilter;
 import org.htmlparser.Remark;
@@ -35,6 +37,8 @@ import org.htmlparser.visitors.AbstractNodeVisitor;
  * @since    2.0
  */
 public class NodeExtractorImpl extends AbstractNodeVisitor implements NodeExtractor {
+
+    private static final Logger logger = Logger.getLogger(NodeExtractorImpl.class.getName());
     
     public static final String USE_DEFAULT = "";
     
@@ -67,18 +71,40 @@ public class NodeExtractorImpl extends AbstractNodeVisitor implements NodeExtrac
     private NodeVisitingFilter nodeVisitingFilter;
     
     private Set<String> attributesToAcceptAll;
-    
+
     public NodeExtractorImpl() {
-        
+        this(Long.toHexString(System.currentTimeMillis()));
+    }
+    
+    public NodeExtractorImpl(String id) {
+        this.id = Objects.requireNonNull(id);
+        this.acceptScripts = false;
         this.concatenateMultipleExtracts = true;
-
         this.enabled = true;
-        
         this.extract = new StringBuilder();
-        
         this.remainginEndTags = new NodeList();
-
         this.separator = USE_DEFAULT;
+    }
+    
+    public NodeExtractorImpl(NodeExtractorConfig config, String id) {
+        this(id);
+        this.attributesToAccept = config.getAttributesToAccept(id);
+        this.attributesToExtract = config.getAttributesToExtract(id);
+        this.concatenateMultipleExtracts = config.isConcatenateMultipleExtracts(id, false);
+
+        this.nodesToRetainAttributes = config.getNodesToRetainAttributes(id); 
+        this.setNodeTypesToAccept(config.getNodeTypesToAccept(id));
+        this.setNodeTypesToReject(config.getNodeTypesToReject(id));
+        this.setNodesToAccept(config.getNodesToAccept(id));
+        this.setNodesToReject(config.getNodeToReject(id));
+
+        this.setTagLocator(new TagLocatorImpl(id, config.getTransverse(id)));
+
+        this.replaceNonBreakingSpace = config.isReplaceNonBreakingSpace(id, false);
+
+        this.setTextToAccept(null);
+        this.setTextToDisableOn(config.getTextToDisableOn(id));
+        this.setTextToReject(config.getTextToReject(id));
     }
     
     @Override
@@ -109,10 +135,7 @@ public class NodeExtractorImpl extends AbstractNodeVisitor implements NodeExtrac
             this.attributesToAcceptAll.addAll(Arrays.asList(this.getAttributesToExtract()));
         }
 
-        AttributesExtractorImpl ae = new AttributesExtractorImpl();
-        ae.setId(this.id);
-        ae.setAttributesToExtract(this.attributesToExtract);
-        this.attributesExtractor = ae;
+        this.attributesExtractor = new AttributesExtractorImpl(this.id);
         
         if(this.separator == USE_DEFAULT) {
             String [] nodeTypes = this.getNodeTypesToAccept();
@@ -146,15 +169,15 @@ public class NodeExtractorImpl extends AbstractNodeVisitor implements NodeExtrac
             // Close unclosed CompositeTags
             //
             if(this.remainginEndTags.size() > 0) {
-XLogger.getInstance().log(Level.FINER, "{0}-Extractor, remaining compositeTags: {1}", 
-            this.getClass(), this.getId(), this.remainginEndTags.toHtml());            
+                
+                logger.finer(() -> this.getId()+"-Extractor, remaining CompositeTags: " + this.remainginEndTags.toHtml());
+                
                 extract.append(this.remainginEndTags.toHtml());
             }
             
             extract = new StringBuilder().append(this.format(extract));
             
-XLogger.getInstance().log(Level.FINE, "{0}-Extractor, Extract: {1}", 
-        this.getClass(), this.getId(), this.extract); 
+            logger.fine(() -> this.getId()+"-Extractor, Extract: "+this.extract); 
         }  
     }
     
@@ -170,8 +193,7 @@ final boolean LOG = false; //"targetNode6".equals(id);// && tag.toTagHtml().star
         
         if(!this.isEnabled()) return;
         
-XLogger.getInstance().log(Level.FINER, "{0}-Extractor.visitTag: {1}", 
-        this.getClass(), this.getId(), tag.toTagHtml());
+        logger.finer(() -> this.getId()+"-Extractor.visitTag: "+tag.toTagHtml());
 
         boolean attributesOnly = this.isExtractOnlyAttributes();
         
@@ -187,8 +209,7 @@ XLogger.getInstance().log(Level.FINER, "{0}-Extractor.visitTag: {1}",
            return;
         }
         
-XLogger.getInstance().log(Level.FINER, "{0}-Extractor Extracting: {1}", 
-        this.getClass(), this.getId(), tag.toTagHtml());
+        logger.finer(() -> this.getId()+"-Extractor Extracting: "+tag.toTagHtml());
 
 //XLogger.getInstance().log(Level.FINER, "Attributes to extract: {0}", this.getClass(), 
 //(this.getAttributesToExtract()==null?null:Arrays.toString(this.getAttributesToExtract())));
@@ -218,16 +239,16 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING "+
         
         if(attributesOnly) {
 
-            String attrVal = this.attributesExtractor.extract(tag);
+            final String [] extractedAttributes = this.attributesExtractor.extract(tag, this.attributesToExtract);
             
-if(LOG) System.out.println("================== Extracted "+attrVal+", from: "+tag.toTagHtml());
+if(LOG) System.out.println("================== Extracted "+Arrays.toString(extractedAttributes)+", from: "+tag.toTagHtml());
 
-XLogger.getInstance().log(Level.FINE, "Extracted attributes: {0} from tag: {1}",
-this.getClass(), attrVal, tag.toTagHtml());
+            logger.fine(() -> MessageFormat.format("Extracted attributes: {0} from tag: {1}",
+                    Arrays.toString(extractedAttributes), tag.toTagHtml()));
 
-            if(attrVal != null) {
-                extract.append(attrVal);
-            }
+            for(String attrVal : extractedAttributes) {
+                extract.append(attrVal).append(' ');
+            }    
             
         }else if(keepAttributes) {
             
@@ -264,8 +285,7 @@ this.getClass(), attrVal, tag.toTagHtml());
         
         this.remainginEndTags.remove(tag);
         
-XLogger.getInstance().log(Level.FINER, "{0}-Extractor Extracting: {1}", 
-        this.getClass(), this.getId(), tag.toTagHtml());
+        logger.finer(() -> this.getId()+"-Extractor Extracting: "+tag.toTagHtml());
 
 //if("targetNode0".equals(id)) System.out.println(this.getClass().getName()+". APPENDING = = = = = = = = = = = = = = = ");
         
@@ -304,8 +324,8 @@ if(LOG) System.out.println(this.getClass().getName()+"#visitStringNode(Text) Nod
             extract.append(" ");
         }
         
-XLogger.getInstance().log(Level.FINER, "{0}-Extractor Extracting: {1}", 
-        this.getClass(), this.getId(), text);
+        final String logRef = text;
+        logger.finer(() -> this.getId()+"-Extractor Extracting: "+logRef);
 
 if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
 
@@ -433,7 +453,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return nodeVisitingFilter;
     }
 
-    @Override
+//    @Override
     public void setFilter(NodeVisitingFilter nodeVisitingFilter) {
         this.nodeVisitingFilter = nodeVisitingFilter;
     }
@@ -487,7 +507,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return nodeVisitingFilter == null ? null : nodeVisitingFilter.getNodeTypesToAccept();
     }
 
-    @Override
+//    @Override
     public void setNodeTypesToAccept(String[] nodeTypesToAccept) {
         this.initNodeVisitingFilter().setNodeTypesToAccept(nodeTypesToAccept);
     }
@@ -497,7 +517,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return nodeVisitingFilter == null ? null : nodeVisitingFilter.getNodeTypesToReject();
     }
 
-    @Override
+//    @Override
     public void setNodeTypesToReject(String[] nodeTypesToReject) {
         this.initNodeVisitingFilter().setNodeTypesToReject(nodeTypesToReject);
     }
@@ -507,7 +527,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return nodeVisitingFilter == null ? null : nodeVisitingFilter.getNodesToAccept();
     }
 
-    @Override
+//    @Override
     public void setNodesToAccept(String[] nodesToAccept) {
         this.initNodeVisitingFilter().setNodesToAccept(nodesToAccept);
     }
@@ -517,7 +537,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return nodeVisitingFilter == null ? null : nodeVisitingFilter.getNodesToReject();
     }
 
-    @Override
+//    @Override
     public void setNodesToReject(String[] nodesToReject) {
         this.initNodeVisitingFilter().setNodesToReject(nodesToReject);
     }
@@ -527,7 +547,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return this.nodeVisitingFilter == null ? null : this.nodeVisitingFilter.getNodesFilter();
     }
 
-    @Override
+//    @Override
     public void setNodesFilter(NodesFilter nodesFilter) {
         this.initNodeVisitingFilter().setNodesFilter(nodesFilter);
     }
@@ -537,7 +557,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return concatenateMultipleExtracts;
     }
 
-    @Override
+//    @Override
     public void setConcatenateMultipleExtracts(boolean concatenateMultipleExtracts) {
         this.concatenateMultipleExtracts = concatenateMultipleExtracts;
     }
@@ -557,7 +577,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return acceptScripts;
     }
 
-    @Override
+//    @Override
     public void setAcceptScripts(boolean acceptScripts) {
         this.acceptScripts = acceptScripts;
     }
@@ -567,7 +587,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return replaceNonBreakingSpace;
     }
 
-    @Override
+//    @Override
     public void setReplaceNonBreakingSpace(boolean replaceNonBreakingSpace) {
         this.replaceNonBreakingSpace = replaceNonBreakingSpace;
     }
@@ -577,7 +597,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return id;
     }
 
-    @Override
+//    @Override
     public void setId(String id) {
         this.id = id;
     }
@@ -587,7 +607,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return separator;
     }
 
-    @Override
+//    @Override
     public void setSeparator(String separator) {
         this.separator = separator;
     }
@@ -597,7 +617,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return attributesToAccept;
     }
 
-    @Override
+//    @Override
     public void setAttributesToAccept(String[] attributesToAccept) {
         this.attributesToAccept = attributesToAccept;
     }
@@ -607,7 +627,7 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return nodesToRetainAttributes;
     }
 
-    @Override
+//    @Override
     public void setNodesToRetainAttributes(String[] nodesToRetainAttributes) {
         this.nodesToRetainAttributes = nodesToRetainAttributes;
     }

@@ -33,7 +33,7 @@ public class AcceptDateHasTime implements Filter<Date> {
     }
     
     @Override
-    public boolean accept(Date date) {
+    public boolean test(Date date) {
         this.calendar.setTime(date);
         boolean output = 
                 this.calendar.get(Calendar.HOUR_OF_DAY) != 0 ||

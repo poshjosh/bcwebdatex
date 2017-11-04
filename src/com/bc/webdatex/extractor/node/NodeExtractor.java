@@ -47,41 +47,41 @@ public interface NodeExtractor extends NodeVisitor, HasBounds, Serializable {
     @Override
     void reset();
 
-    void setAcceptScripts(boolean acceptScripts);
+//    void setAcceptScripts(boolean acceptScripts);
 //
-    void setAttributesToAccept(String[] attributesToAccept);
+//    void setAttributesToAccept(String[] attributesToAccept);
 //
-    void setConcatenateMultipleExtracts(boolean concatenateMultipleExtracts);
+//    void setConcatenateMultipleExtracts(boolean concatenateMultipleExtracts);
 
     void setEnabled(boolean enabled);
 
-    void setFilter(NodeVisitingFilter filter);
+//    void setFilter(NodeVisitingFilter filter);
 
-    void setId(String id);
+//    void setId(String id);
 
-    void setNodesToRetainAttributes(String[] nodesToRetainAttributes);
+//    void setNodesToRetainAttributes(String[] nodesToRetainAttributes);
 
-    void setReplaceNonBreakingSpace(boolean replaceNonBreakingSpace);
+//    void setReplaceNonBreakingSpace(boolean replaceNonBreakingSpace);
 
-    void setSeparator(String separator);
+//    void setSeparator(String separator);
 
     String[] getNodeTypesToAccept();
 
-    void setNodeTypesToAccept(String[] nodeTypesToAccept);
+//    void setNodeTypesToAccept(String[] nodeTypesToAccept);
 
     String[] getNodeTypesToReject();
 
-    void setNodeTypesToReject(String[] nodeTypesToReject);
+//    void setNodeTypesToReject(String[] nodeTypesToReject);
 
     String[] getNodesToAccept();
 
-    void setNodesToAccept(String[] nodesToAccept);
+//    void setNodesToAccept(String[] nodesToAccept);
 
     String[] getNodesToReject();
 
-    void setNodesToReject(String[] nodesToReject);
+//    void setNodesToReject(String[] nodesToReject);
 
     NodesFilter getNodesFilter();
 
-    void setNodesFilter(NodesFilter nodesFilter);
+//    void setNodesFilter(NodesFilter nodesFilter);
 }

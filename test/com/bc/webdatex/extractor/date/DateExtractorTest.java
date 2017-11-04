@@ -46,33 +46,38 @@ public class DateExtractorTest {
 System.out.println("\nCurrent time");
 this.print(TimeZone.getDefault(), new Date());
 
-        List patterns = Arrays.asList("MM/dd/yy HH:mm a", "yyyy MMM dd HH:mm:ss", "MMMM dd, yyyy HH:mm");
+        List patterns = Arrays.asList("MM/dd/yyyy KK:mm a", "MM/dd/yy HH:mm a", "yyyy MMM dd HH:mm:ss", "MMMM dd, yyyy HH:mm");
         TimeZone in = TimeZone.getDefault();
         TimeZone out = TimeZone.getTimeZone("Asia/Kolkata");
         
-        SimpleDateFormat dateFormat = new SimpleDateFormat();
-        dateFormat.setLenient(true);
-        TextParser<Date> instance = new DateExtractor(dateFormat, patterns, in, out); 
-        
-        String dateString = "10/14/16 12:00 AM";
+        TextParser<Date> instance = new DateExtractor(patterns, in, out); 
+
+        String dateString = "by Linda Ikeji at 09/10/2017 10:23 AM";
         Date result = instance.extract(dateString, null);
+System.out.println("\n");
+this.print(out, result);
+
+        dateString = "10/14/16 12:00 AM";
+        result = instance.extract(dateString, null);
 System.out.println("\n");
 this.print(out, result);
 
         dateString = "2016 Oct 03 21:54:30";
         result = instance.extract(dateString, null);
-        
 System.out.println("\n");
 this.print(out, result);
 
         dateString = "Oct 03, 2016 21:54:30";
         result = instance.extract(dateString, null);
-        
 System.out.println("\n");
 this.print(out, result);
     }
     
     private void print(TimeZone timeZone, Date date) {
+        if(date == null) {
+            System.out.println("Date is null");
+            return;
+        }
         SimpleDateFormat sdf = new SimpleDateFormat();
         sdf.setTimeZone(timeZone);
 System.out.println(sdf.format(date));        

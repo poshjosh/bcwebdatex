@@ -54,7 +54,7 @@ public class ImageSrcFilter implements Filter<String> {
     }
 
     @Override
-    public boolean accept(String imageSrc) {
+    public boolean test(String imageSrc) {
         
         final Level level = Level.FINER;
         

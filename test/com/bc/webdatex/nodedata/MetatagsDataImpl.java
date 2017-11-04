@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 import org.htmlparser.Attribute;
 import org.htmlparser.util.NodeList;
-import com.bc.dom.HtmlPageDom;
+import com.bc.dom.HtmlDocument;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Sep 5, 2016 8:25:29 PM
@@ -38,11 +38,11 @@ public class MetatagsDataImpl extends AbstractMetadata {
         super(url, nodeList, defaultAttributeNames);
     }
 
-    public MetatagsDataImpl(HtmlPageDom dom) {
+    public MetatagsDataImpl(HtmlDocument dom) {
         super(dom);
     }
 
-    public MetatagsDataImpl(HtmlPageDom dom, String[] defaultAttributeNames) {
+    public MetatagsDataImpl(HtmlDocument dom, String[] defaultAttributeNames) {
         super(dom, defaultAttributeNames);
     }
     

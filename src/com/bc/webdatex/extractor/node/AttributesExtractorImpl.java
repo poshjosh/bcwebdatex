@@ -5,8 +5,9 @@ import java.util.regex.Pattern;
 import org.htmlparser.Attribute;
 import org.htmlparser.Tag;
 import org.htmlparser.tags.ImageTag;
-import com.bc.util.XLogger;
 import java.io.Serializable;
+import java.util.Objects;
+import java.util.logging.Logger;
 
 /**
  * @(#)DefaultAttributesExtractor.java   20-Feb-2014 23:08:22
@@ -22,18 +23,26 @@ import java.io.Serializable;
  */
 public class AttributesExtractorImpl implements AttributesExtractor, Serializable {
 
-    private String id;
+    private static final Logger logger = Logger.getLogger(AttributesExtractorImpl.class.getName());
+
+    private final String id;
+
+    public AttributesExtractorImpl() {
+        this(Long.toHexString(System.currentTimeMillis()));
+    }
     
-    private String [] attributesToExtract;
-    
-    public AttributesExtractorImpl() { }
+    public AttributesExtractorImpl(String id) {
+        this.id = Objects.requireNonNull(id);
+    }
 
     @Override
-    public String extract(Tag tag) {
+    public String[] extract(Tag tag, String... attributesToExtract) {
         
-        StringBuilder extract = new StringBuilder();
+        final String [] extract = new String[attributesToExtract.length];
         
-        for(String name:this.attributesToExtract) {
+        for(int i=0; i<attributesToExtract.length; i++) {
+            
+            final String name = attributesToExtract[i];
             
             Attribute attr = tag.getAttribute(name);
             
@@ -51,30 +60,16 @@ public class AttributesExtractorImpl implements AttributesExtractor, Serializabl
 //src=http://www.abc.com/image.jpg was often found to be 
 //src=http://1.1.1.1/bmi/www.abc.com/image.jpg
                 value = Pattern.compile("\\d\\.\\d\\.\\d\\.\\d/bmi/").matcher(value).replaceFirst("");                
-XLogger.getInstance().log(Level.FINER, "Updated image source to: {0}", this.getClass(), value);                
+                logger.log(Level.FINER, "Updated image source to: {0}", value);                
             }
             
-            extract.append(value).append(' ');
+            extract[i] = value;
         }
 
-        return extract.length() == 0 ? null : extract.toString().trim();
+        return extract;
     }
     
-    public String getId() {
+    public final String getId() {
         return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-    
-    @Override
-    public String[] getAttributesToExtract() {
-        return attributesToExtract;
-    }
-
-    @Override
-    public void setAttributesToExtract(String[] attributesToExtract) {
-        this.attributesToExtract = attributesToExtract;
     }
 }

@@ -49,10 +49,10 @@ public class ImageSelector extends ImageFilter {
     public String getFirstValidImageUrl(Set<String> imageUrls, String outputIfNone) {
         String firstValidImageUrl = outputIfNone;
 final long tb4 = System.currentTimeMillis();
-final long mb4 = this.freeMemory();
+final long mb4 = com.bc.util.Util.availableMemory();
         if(imageUrls != null && !imageUrls.isEmpty()) {
             for(String url : imageUrls) {
-                if(this.accept(url)) {
+                if(this.test(url)) {
                     firstValidImageUrl = url;
                     break;
                 }
@@ -60,18 +60,18 @@ final long mb4 = this.freeMemory();
         }
 XLogger.getInstance().log(Level.FINER, 
     "getFirstValidImageUrl. Consumed. time: {0}, memory: {1}",
-    this.getClass(), System.currentTimeMillis()-tb4, mb4-this.freeMemory());
+    this.getClass(), System.currentTimeMillis()-tb4, com.bc.util.Util.usedMemory(mb4));
         return firstValidImageUrl;
     }
 
     public String getImageUrlOfLargestImage(Set<String> imageUrls, String outputIfNone) {
         String imageUrlOfLargestImage = outputIfNone;
 final long tb4 = System.currentTimeMillis();
-final long mb4 = this.freeMemory();
+final long mb4 = com.bc.util.Util.availableMemory();
         if(imageUrls != null && !imageUrls.isEmpty()) {
             int largestSize = 0;
             for(String url : imageUrls) {
-                if(this.accept(url)) {
+                if(this.test(url)) {
                     final ImageInfo imageInfo = this.getImageInfo();
                     final int size = imageInfo.getWidth() * imageInfo.getHeight();
                     if(size > largestSize) {
@@ -83,12 +83,7 @@ final long mb4 = this.freeMemory();
         }
 XLogger.getInstance().log(Level.FINER, 
     "getImageUrlOfLargestImage. Consumed. time: {0}, memory: {1}",
-    this.getClass(), System.currentTimeMillis()-tb4, mb4-this.freeMemory());
+    this.getClass(), System.currentTimeMillis()-tb4, com.bc.util.Util.usedMemory(mb4));
         return imageUrlOfLargestImage;
-    }
-    
-    private long freeMemory() {
-        Runtime r = Runtime.getRuntime();
-        return r.maxMemory() - r.totalMemory() - r.freeMemory();
     }
 }

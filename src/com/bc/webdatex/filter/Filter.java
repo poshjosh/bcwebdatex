@@ -16,18 +16,12 @@
 
 package com.bc.webdatex.filter;
 
+import java.util.function.Predicate;
+
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 14, 2016 3:48:26 PM
  * @param <E> The type to filter
  */
-public interface Filter<E> {
+public interface Filter<E> extends Predicate<E> {
     
-    Filter NO_OP = new Filter() {
-        @Override
-        public boolean accept(Object e) {
-            return true;
-        }
-    };
-    
-    boolean accept(E e);
 }

@@ -16,7 +16,6 @@
 
 package com.bc.webdatex.extractor.date;
 
-import com.bc.util.XLogger;
 import com.bc.webdatex.converter.Converter;
 import com.bc.webdatex.converter.DateTimeConverter;
 import java.text.ParseException;
@@ -31,12 +30,15 @@ import java.util.Objects;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import com.bc.webdatex.extractor.TextParser;
+import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 3, 2016 8:20:03 PM
  */
 public class DateExtractor implements TextParser<Date> {
 
+    private static final Logger logger = Logger.getLogger(DateExtractor.class.getName());
+  
     private final Collection<String> dateFormatPatterns;
     private final TimeZone inputTimeZone;
     private final TimeZone outputTimeZone;
@@ -52,9 +54,9 @@ public class DateExtractor implements TextParser<Date> {
     }
     
     static SimpleDateFormat getDateFormat() {
-        SimpleDateFormat df = new SimpleDateFormatAddTimeIfNone();
-        df.setLenient(true);
-        return df; 
+        SimpleDateFormat dateFormat = new SimpleDateFormatAddTimeIfNone();
+        dateFormat.setLenient(true);
+        return dateFormat; 
     }
     
     public DateExtractor(
@@ -83,10 +85,6 @@ public class DateExtractor implements TextParser<Date> {
     @Override
     public Date extract(String dateString, Date defaultOutput) {
         
-        final XLogger logger = XLogger.getInstance();
-        final Class cls = this.getClass();
-        final Level level = Level.FINER;
-        
         Date output = defaultOutput;
         
         final String beforeFormat = dateString;
@@ -99,7 +97,7 @@ public class DateExtractor implements TextParser<Date> {
 
             try{
                 
-                output = this.extract(logger, level, cls, dateFormatPattern, dateString);
+                output = this.extract(dateFormatPattern, dateString);
                 
                 break;
 
@@ -115,15 +113,13 @@ public class DateExtractor implements TextParser<Date> {
         
         if(output == defaultOutput && parseException != null) {
             logger.log(Level.WARNING, "{0}\nError parsing: {1}, even after formatting to: {2}. DateFormats: {3}",
-                    cls, parseException, beforeFormat, dateString, this.dateFormatPatterns);
+                    new Object[]{parseException, beforeFormat, dateString, this.dateFormatPatterns});
         }
         
         return output;
     }
     
-    private Date extract(
-            XLogger logger, Level level, Class cls, 
-            String dateFormatPattern, String dateString) throws ParseException {
+    private Date extract(String dateFormatPattern, String dateString) throws ParseException {
         
         dateFormat.applyPattern(dateFormatPattern);
         
@@ -151,11 +147,11 @@ public class DateExtractor implements TextParser<Date> {
             to = this.format(date_inputTimeZone, outputTimeZone);
         }
         
-        if(logger.isLoggable(level, cls)) {
+        if(logger.isLoggable(Level.FINER)) {
 
-            logger.log(level, 
-                "TimeZone: {0}, date: {1}, Output TimeZone: {2}, date: {3}", cls,
-                inputTimeZone.getID(), from, outputTimeZone.getID(), to);
+            logger.log(Level.FINER, 
+                "TimeZone: {0}, date: {1}, Output TimeZone: {2}, date: {3}", 
+                new Object[]{inputTimeZone.getID(), from, outputTimeZone.getID(), to});
         }
 
         return date_outputTimeZone;
@@ -163,7 +159,9 @@ public class DateExtractor implements TextParser<Date> {
     
     public Date parse(String dateStr, TimeZone timeZone) throws ParseException {
         dateFormat.setTimeZone(timeZone);
-        return dateFormat.parse(dateStr);
+        final Date date = dateFormat.parse(dateStr);
+        logger.finer(() -> "Date str: " + dateStr + ", date: " + date);
+        return date;
     }
     
     public String format(Date date, TimeZone timeZone) {

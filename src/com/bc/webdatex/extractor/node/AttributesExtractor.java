@@ -16,9 +16,5 @@ import org.htmlparser.Tag;
  */
 public interface AttributesExtractor {
     
-    String extract(Tag tag);
-
-    String[] getAttributesToExtract();
-
-    void setAttributesToExtract(String[] attributesToExtract);
+    String[] extract(Tag tag, String... attributes);
 }

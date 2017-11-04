@@ -16,10 +16,10 @@
 
 package com.bc.webdatex.converter;
 
-import com.bc.webdatex.filter.Filter;
 import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.function.Predicate;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 4, 2016 9:52:57 AM
@@ -28,13 +28,13 @@ public class DateTimeConverter implements Converter<Date, Date> {
 
     private final TimeZone inputTimeZone;
     private final TimeZone outputTimeZone;
-    private final Filter<Date> dateFilter;
+    private final Predicate<Date> dateFilter;
 
     public DateTimeConverter(TimeZone inputTimeZone, TimeZone outputTimeZone) {
-        this(Filter.NO_OP, inputTimeZone, outputTimeZone);
+        this((date) -> true, inputTimeZone, outputTimeZone);
     }
     
-    public DateTimeConverter(Filter<Date> dateFilter, TimeZone inputTimeZone, TimeZone outputTimeZone) {
+    public DateTimeConverter(Predicate<Date> dateFilter, TimeZone inputTimeZone, TimeZone outputTimeZone) {
         this.inputTimeZone = Objects.requireNonNull(inputTimeZone);
         this.outputTimeZone = Objects.requireNonNull(outputTimeZone);
         this.dateFilter = Objects.requireNonNull(dateFilter);
@@ -54,7 +54,7 @@ public class DateTimeConverter implements Converter<Date, Date> {
     
     protected Date translate(Date date, boolean add) {
         
-        if(this.dateFilter.accept(date)) {
+        if(this.dateFilter.test(date)) {
             
             final long time = date.getTime();
 
@@ -78,7 +78,7 @@ public class DateTimeConverter implements Converter<Date, Date> {
         return outputTimeZone.getID();
     }
 
-    public final Filter<Date> getDateFilter() {
+    public final Predicate<Date> getDateFilter() {
         return dateFilter;
     }
 }

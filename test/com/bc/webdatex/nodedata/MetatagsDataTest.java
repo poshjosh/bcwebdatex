@@ -17,12 +17,12 @@ package com.bc.webdatex.nodedata;
 
 import com.bc.dom.metatags.OpenGraph;
 import com.bc.dom.metatags.MetadataChain;
-import com.bc.dom.HtmlPageDomImpl;
+import com.bc.dom.HtmlDocumentImpl;
 import com.bc.dom.metatags.BasicMetadata;
 import com.bc.dom.metatags.SchemaArticle;
 import com.bc.dom.metatags.TwitterCard;
 import com.bc.webdatex.TestBase;
-import com.bc.webdatex.URLParser;
+import com.bc.webdatex.BaseCrawler;
 import com.bc.webdatex.filter.ImageSelector;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -41,7 +41,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.bc.dom.metatags.Metadata;
-import com.bc.dom.HtmlPageDom;
+import com.bc.dom.HtmlDocument;
 
 /**
  * @author Josh
@@ -87,7 +87,7 @@ System.out.println("----------------------------------------------------");
         
         for(String imageUrl : imageUrls) {
         
-            boolean accepted = imageSelector.accept(imageUrl);
+            boolean accepted = imageSelector.test(imageUrl);
             
 System.out.println("Accepted: "+accepted+", imageUrl: "+imageUrl);            
         }
@@ -97,9 +97,9 @@ System.out.println("Accepted: "+accepted+", imageUrl: "+imageUrl);
 System.out.println("--------------------- "+site+" ---------------------");        
         final String url = this.getUrl(site);
 System.out.println("URL: "+url);        
-        final URLParser parser = new URLParser();
+        final BaseCrawler parser = new BaseCrawler();
         final NodeList nodes = parser.parse(url);
-        final HtmlPageDom dom = new HtmlPageDomImpl(url, nodes);
+        final HtmlDocument dom = new HtmlDocumentImpl(url, nodes);
         
         final Metadata lhs = new MetatagsDataImpl(dom);
 
@@ -130,7 +130,7 @@ System.out.println("URL: "+url);
     }
 
     private Metadata getCompositeInstance(
-            HtmlPageDom dom, Collection<String> dateFormatPatterns,
+            HtmlDocument dom, Collection<String> dateFormatPatterns,
             TimeZone inputTimeZone, TimeZone outputTimeZone, 
             Class<? extends Metadata>... types) {
         return this.getCompositeInstance(dom, dateFormatPatterns, 
@@ -138,7 +138,7 @@ System.out.println("URL: "+url);
     }
     
     private Metadata getCompositeInstance(
-            HtmlPageDom dom, Collection<String> dateFormatPatterns,
+            HtmlDocument dom, Collection<String> dateFormatPatterns,
             TimeZone inputTimeZone, TimeZone outputTimeZone, 
             Collection<Class<? extends Metadata>> types) {
         List<Metadata> list = new ArrayList(types.size());
@@ -150,11 +150,11 @@ System.out.println("URL: "+url);
     }
     
     private Metadata getInstance(
-            HtmlPageDom dom, Collection<String> dateFormatPatterns,
+            HtmlDocument dom, Collection<String> dateFormatPatterns,
             TimeZone inputTimeZone, TimeZone outputTimeZone,
             Class<? extends Metadata> type) {
         try{
-            Constructor constructor = type.getConstructor(HtmlPageDom.class, Collection.class, TimeZone.class, TimeZone.class);
+            Constructor constructor = type.getConstructor(HtmlDocument.class, Collection.class, TimeZone.class, TimeZone.class);
             return (Metadata)constructor.newInstance(dom, dateFormatPatterns, inputTimeZone, outputTimeZone);
         }catch(NoSuchMethodException | SecurityException | InstantiationException | 
                 IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {

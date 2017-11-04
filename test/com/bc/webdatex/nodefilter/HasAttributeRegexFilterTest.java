@@ -17,7 +17,7 @@ package com.bc.webdatex.nodefilter;
 
 import org.htmlparser.filters.HasAttributeRegexFilter;
 import com.bc.webdatex.TestBase;
-import com.bc.webdatex.URLParser;
+import com.bc.webdatex.BaseCrawler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -54,7 +54,7 @@ public class HasAttributeRegexFilterTest extends TestBase {
         System.out.println("--------------------- "+site+" ---------------------");
         final String url = this.getUrl(site);
         System.out.println("URL: "+url);
-        URLParser parser = new URLParser();
+        BaseCrawler parser = new BaseCrawler();
         NodeList nodes = parser.parse(url);
         final String attributeName = "property";
         

@@ -17,7 +17,7 @@ package com.bc.webdatex.util;
 
 import com.bc.webdatex.extractor.Extractor;
 import com.bc.webdatex.extractor.node.NodeSelector;
-import com.bc.dom.HtmlPageDomImpl;
+import com.bc.dom.HtmlDocumentImpl;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.util.List;
@@ -35,7 +35,7 @@ import org.htmlparser.tags.StyleTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 import org.junit.Test;
-import com.bc.dom.HtmlPageDom;
+import com.bc.dom.HtmlDocument;
 
 /**
  *
@@ -87,7 +87,7 @@ System.out.println();
         NodeList nodes = parser.parse(null);
 System.out.println("\n--------------- HTML -----------------");
 System.out.println(nodes.toHtml(true).replace('\n', ' '));        
-        HtmlPageDom dom = new HtmlPageDomImpl(url, nodes);
+        HtmlDocument dom = new HtmlDocumentImpl(url, nodes);
         nodes = dom.getBody().getChildren();
         
         NodeFilter filter = new NotFilter(
