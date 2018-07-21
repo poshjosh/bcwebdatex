@@ -1,8 +1,6 @@
 package com.bc.webdatex.nodefilters;
 
-import com.bc.webdatex.bounds.HasBounds;
-import com.bc.webdatex.locator.TagLocator;
-import com.bc.webdatex.visitors.BoundsVisitor;
+import com.bc.nodelocator.NodeLocatingFilter;
 import org.htmlparser.Node;
 import org.htmlparser.NodeFilter;
 import org.htmlparser.Remark;
@@ -23,10 +21,32 @@ import org.htmlparser.Text;
  * @version  2.0
  * @since    2.0
  */
-public interface NodeVisitingFilter extends HasBounds, NodeFilter {
+public interface NodeVisitingFilter extends NodeFilter {
     
     @Override
-    boolean accept(Node node);
+    default boolean accept(Node node) {
+        return accept(node, false);
+    }
+    
+    default boolean accept(Node node, boolean defaultOutput) {
+        boolean output;
+        if(node instanceof Tag) {
+            Tag tag = (Tag)node;
+            if(!tag.isEndTag()) {
+                output = this.acceptTag(tag);
+            }else {
+                output = this.acceptEndTag(tag);
+            }
+        }else if(node instanceof Text) {
+            output = this.acceptStringNode((Text)node);
+        }else if(node instanceof Remark) {
+            output = this.acceptRemarkNode((Remark)node);
+        }else {
+            // Unknown node, may be Tag type was not registered
+            output = defaultOutput;
+        }
+        return output;
+    }
 
     boolean acceptEndTag(Tag tag);
 
@@ -36,74 +56,13 @@ public interface NodeVisitingFilter extends HasBounds, NodeFilter {
 
     boolean acceptTag(Tag tag);
 
-    BoundsVisitor getBoundsVisitor();
-
-    String getId();
-
-    NodeFilter getStartAtFilter();
-
-    NodeFilter getStopAtFilter();
-
-    NodeFilter getTagFilter();
-
-    TagLocator getTagLocator();
+    NodeLocatingFilter<Node> getNodeLocator();
 
     TextFilter getTextFilter();
 
-    String[] getTextToAccept();
-
-    String [] getTextToDisableOn();
-    
-    String[] getTextToReject();
+    NodesFilter getNodesFilter();
     
     int getVisitedStartTags();
 
-    @Override
-    boolean isDone();
-
-    @Override
-    boolean isStarted();
-
-    boolean isWithinBounds();
-    
-    @Override
     void reset();
-
-    void setBoundsVisitor(BoundsVisitor boundsVisitor);
-
-    void setStartAtFilter(NodeFilter startAtFilter);
-
-    void setStopAtFilter(NodeFilter stopAtFilter);
-
-    void setTagFilter(NodeFilter tagFilter);
-
-    void setTagLocator(TagLocator tagLocator);
-    
-    void setTextFilter(TextFilter filter);
-
-    void setTextToAccept(String[] textToAccept);
-
-    void setTextToDisableOn(String [] textToAccept);
-    
-    void setTextToReject(String[] textToReject);
-    
-    String[] getNodeTypesToAccept();
-
-    void setNodeTypesToAccept(String[] nodeTypesToAccept);
-
-    String[] getNodeTypesToReject();
-
-    void setNodeTypesToReject(String[] nodeTypesToReject);
-
-    String[] getNodesToAccept();
-
-    void setNodesToAccept(String[] nodesToAccept);
-
-    String[] getNodesToReject();
-
-    void setNodesToReject(String[] nodesToReject);
-
-    NodesFilter getNodesFilter();
-
-    void setNodesFilter(NodesFilter nodesFilter);
 }

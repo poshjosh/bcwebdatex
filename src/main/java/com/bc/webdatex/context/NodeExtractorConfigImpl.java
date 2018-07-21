@@ -1,18 +1,23 @@
 package com.bc.webdatex.context;
 
-import com.bc.webdatex.extractors.node.NodeExtractorConfig;
 import com.bc.json.config.JsonConfig;
-import com.bc.util.Log;
-import com.bc.webdatex.config.Config;
+import com.bc.nodelocator.ConfigName;
+import com.bc.nodelocator.impl.ListTransverse;
+import com.bc.nodelocator.impl.PathBuilder;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import com.bc.nodelocator.Path;
 
 public class NodeExtractorConfigImpl implements Serializable, NodeExtractorConfig {
+
+  private transient static final Logger LOG = Logger.getLogger(NodeExtractorConfigImpl.class.getName());
+  
+  private static final String [] EMPTY_STRING_ARRAY = new String[0];
     
   private final JsonConfig config;
   
@@ -26,129 +31,120 @@ public class NodeExtractorConfigImpl implements Serializable, NodeExtractorConfi
 
   @Override
   public Map getDefaults() {
-    Map output = config.getMap(Config.Formatter.defaultValues);
-    return output == null ? Collections.EMPTY_MAP : output;  
+    Map output = config.getMap(ConfigName.defaultValues);
+    return output == null || output.isEmpty() ? Collections.EMPTY_MAP : Collections.unmodifiableMap(output);  
   }
 
   @Override
   public String[] getDatePatterns(){
-    Object[] arr = this.config.getArray(new Object[] { Config.Formatter.datePatterns });
+    Object[] arr = this.config.getArray(ConfigName.datePatterns);
     return this.stringCopyOf(arr);
   }
   
   @Override
   public String[] getUrlDatePatterns(){
-    Object[] arr = this.config.getArray(new Object[] { Config.Formatter.urlDatePatterns });
+    Object[] arr = this.config.getArray(ConfigName.urlDatePatterns);
     return this.stringCopyOf(arr);
   }
   
   @Override
-  public String[] getTransverse(String id) {
-    return getStringArray(id, Config.Extractor.transverse);
+  public List<String> [] getPath(Object id) {
+    return new PathBuilder().build(this.getTransverse(id));
+  }
+    
+  @Override
+  public List<String> getPathFlattened(Object id) {
+    return new PathBuilder().flatten(this.getTransverse(id));
+  }
+
+  @Override
+  public Path<String> getTransverse(Object id) {
+    final String [] arr = this.getTransverseArray(id);
+    final List<String> list = arr == null || arr.length == 0 ? Collections.EMPTY_LIST : Arrays.asList(arr);
+    return new ListTransverse(list);
+  }
+  
+  public String[] getTransverseArray(Object id) {
+    return selectorConfigStringArray(id, ConfigName.transverse);
   }
   
   @Override
-  public String[] getTextToDisableOn(String id) {
-    return getStringArray(id, Config.Extractor.textToDisableOn);
+  public String[] getTextToReject(Object id) {
+    return selectorConfigStringArray(id, ConfigName.textToReject);
   }
   
   @Override
-  public String[] getTextToReject(String id) {
-    return getStringArray(id, Config.Extractor.textToReject);
-  }
-  
-  @Override
-  public boolean isConcatenateMultipleExtracts(String id, boolean defaultValue) {
-    Boolean b = this.getBoolean(id, Config.Extractor.append, defaultValue);
+  public boolean isConcatenateMultipleExtracts(Object id, boolean defaultValue) {
+    Boolean b = this.selectorConfigBoolean(id, ConfigName.append, defaultValue);
     return b;
   }
   
   @Override
   public String getLineSeparator() {
-    return getConfig().getString(new Object[] { Config.Extractor.lineSeparator });
+    return config.getString(ConfigName.lineSeparator);
   }
   
   @Override
   public String getPartSeparator() {
-    return getConfig().getString(new Object[] { Config.Extractor.partSeparator });
+    return config.getString(ConfigName.partSeparator);
   }
   
   @Override
   public String getDefaultTitle() {
-    return getConfig().getString(new Object[] { Config.Extractor.defaultTitle });
+    return (String)this.getDefaults().get(ConfigName.title);
   }
   
   @Override
-  public String[] getColumns(String id) {
-    return getStringArray(id, Config.Extractor.columns);
+  public String[] getColumns(Object id) {
+    return selectorConfigStringArray(id, ConfigName.ids);
   }
   
   @Override
-  public String[] getNodesToRetainAttributes(String id) {
-      
-    JsonConfig cfg = getConfig();
-    
-    List defaultNodes = cfg.getList(new Object[] { Config.Extractor.nodesToRetainAttributes });
-    List nodes = cfg.getList(new Object[] { id, Config.Extractor.nodesToRetainAttributes });
-    
-    List<String> list = new ArrayList();
-    
-    if (defaultNodes != null) {
-      list.addAll(defaultNodes);
-    }
-    if (nodes != null) {
-      list.addAll(nodes);
-    }
-    
-    String[] nodesToRetainAttributes = (String[])list.toArray(new String[0]);
-    
-    return nodesToRetainAttributes;
+  public boolean isReplaceNonBreakingSpace(Object id, boolean defaultValue) {
+    return this.selectorConfigBoolean(id, ConfigName.replaceNonBreakingSpace, defaultValue);
   }
   
   @Override
-  public boolean isReplaceNonBreakingSpace(String id, boolean defaultValue) {
-    return this.getBoolean(id, Config.Extractor.replaceNonBreakingSpace, defaultValue);
-  }
-  
-  @Override
-  public String[] getAttributesToAccept(String id) {
-    return getStringArray(id, Config.Extractor.attributesToAccept);
-  }
-  
-  @Override
-  public String[] getAttributesToExtract(String id) {
-      
-    String[] arr = getStringArray(id, Config.Extractor.attributesToExtract);
-    
-    Log.getInstance().log(Level.FINER, "Attributes to extract: {0}", getClass(), arr == null ? null : Arrays.toString(arr));
-    
+  public String[] getAttributesToExtract(Object id) {
+    final String[] arr = selectorConfigStringArray(id, ConfigName.attributesToExtract);
+    LOG.log(Level.FINER, "Attributes to extract: {0}", arr == null ? null : Arrays.toString(arr));
     return arr;
   }
+
+    @Override
+    public String getImageUrlUnwantedRegex() {
+        return this.config.getString(ConfigName.imageUrl_unwantedRegex);
+    }
+
+    @Override
+    public String getImageUrlRequiredRegex() {
+        return this.config.getString(ConfigName.imageUrl_requiredRegex);
+    }
   
   @Override
-  public String[] getNodeTypesToAccept(String id) {
-    return toLowercaseStringArray(getStringArray(id, Config.Extractor.nodeTypesToAccept));
+  public String[] getNodeTypesToAccept(Object id) {
+    return toLowercaseStringArray(selectorConfigArray(id, ConfigName.nodeTypesToAccept));
   }
   
   @Override
-  public String[] getNodeTypesToReject(String id)  {
-    return toLowercaseStringArray(getStringArray(id, Config.Extractor.nodeTypesToReject));
+  public String[] getNodeTypesToReject(Object id)  {
+    return toLowercaseStringArray(selectorConfigArray(id, ConfigName.nodeTypesToReject));
   }
   
   @Override
-  public String[] getNodesToAccept(String id) {
-    return toLowercaseStringArray(getStringArray(id, Config.Extractor.nodesToAccept));
+  public String[] getNodesToAccept(Object id) {
+    return toLowercaseStringArray(selectorConfigArray(id, ConfigName.nodesToAccept));
   }
   
   @Override
-  public String[] getNodeToReject(String id) { 
-      return toLowercaseStringArray(getStringArray(id, Config.Extractor.nodesToReject)); 
+  public String[] getNodeToReject(Object id) { 
+      return toLowercaseStringArray(selectorConfigArray(id, ConfigName.nodesToReject)); 
   }
   
   private String[] toLowercaseStringArray(Object[] arr) {
     String[] output;
-    if (arr == null) {
-      output = null; //new String[0];
+    if (arr == null || arr.length == 0) {
+      output = EMPTY_STRING_ARRAY;
     } else {
       output = new String[arr.length];
       for (int i = 0; i < arr.length; i++) {
@@ -157,35 +153,95 @@ public class NodeExtractorConfigImpl implements Serializable, NodeExtractorConfi
     }
     return output;
   }
+
   
-  private String[] getStringArray(String first, Object second) {
+  private String[] stringCopyOf(Object... src)  {
+    String[] output;
+    if (src != null && src.length != 0) {
+      output = new String[src.length];
+      System.arraycopy(src, 0, output, 0, src.length);
+    } else {
+      output = EMPTY_STRING_ARRAY;
+    }
+    
+    return output;
+  }
+
+  private Object[] selectorConfigArray(Object listItemPos, Object second) {
+    List<String> list = config.getList(ConfigName.selectorConfigList, listItemPos, second);
+    if(list == null) {
+      list = (List)config.getObject(second);
+    }
+    return list == null || list.isEmpty() ? new Object[0] : list.toArray();
+  }
+  
+  private String[] selectorConfigStringArray(Object listItemPos, Object second) {
+    List<String> list = config.getList(ConfigName.selectorConfigList, listItemPos, second);
+    if(list == null) {
+      list = config.getList(second);
+    }
+    return list == null || list.isEmpty() ? EMPTY_STRING_ARRAY : list.toArray(new String[0]);
+  }
+  
+  private boolean selectorConfigBoolean(Object listItemPos, Object second, boolean defaultValue) {
+    Object val = config.getBoolean(ConfigName.selectorConfigList, listItemPos, second);
+    if(val == null) {
+      val = config.getObject(second);
+    }
+    return val == null ? defaultValue : val instanceof Boolean ? (Boolean)val : Boolean.valueOf(val.toString().trim());
+  } 
+}
+/**
+ * 
+
+  private Object[] getSelectorConfigArray(Object first, Object second) {
+    final Map selectorConfig = this.getSelectorConfig(first);
+    List list = (List)selectorConfig.get(second);
+    if(list == null) {
+      list = (List)config.getObject(second);
+    }
+    return list == null || list.isEmpty() ? new Object[0] : list.toArray();
+  }
+  private String[] getSelectorConfigStringArray(Object first, Object second) {
+    final Map selectorConfig = this.getSelectorConfig(first);
+    List<?> list = (List<?>)selectorConfig.get(second);
+    if(list == null) {
+      list = (List<?>)config.getObject(second);
+    }
+    return list == null || list.isEmpty() ? EMPTY_STRING_ARRAY : 
+            list.stream().map(Object::toString).collect(Collectors.toList()).toArray(new String[0]);
+  }
+  private boolean getSelectorConfigBoolean(Object first, Object second, boolean defaultValue) {
+    final Map selectorConfig = this.getSelectorConfig(first);
+    Object val = selectorConfig.get(second);
+    if(val == null) {
+      val = config.getObject(second);
+    }
+    return val == null ? defaultValue : val instanceof Boolean ? (Boolean)val : Boolean.valueOf(val.toString().trim());
+  } 
+  private Map getSelectorConfig(Object id) {
+      final Integer ival = id instanceof Integer ? (Integer)id : Integer.parseInt(id.toString());
+      return (Map)config.getList(ConfigName.selectorConfigList).get(ival);
+  }
+
+  private String[] getStringArrayOld(String first, Object second) {
       
-    Object[] arr = getConfig().getArray(new Object[] { first, second });
+    Object[] arr = config.getArray(new Object[] { first, second });
     
     if (arr == null) {
-      arr = getConfig().getArray(new Object[] { second });
+      arr = config.getArray(new Object[] { second });
     }
     
     return this.stringCopyOf(arr);
   }
 
-  private boolean getBoolean(String first, Object second, boolean defaultValue) {
-    Boolean bool = getConfig().getBoolean(new Object[] { first, second });
+  private boolean getBooleanOld(String first, Object second, boolean defaultValue) {
+    Boolean bool = config.getBoolean(new Object[] { first, second });
     if (bool == null) {
       bool = config.getBoolean(new Object[] { second });
     }
     return bool==null?defaultValue:bool;
-  }  
+  } 
   
-  private String[] stringCopyOf(Object... src)  {
-    String[] output;
-    if (src != null) {
-      output = new String[src.length];
-      System.arraycopy(src, 0, output, 0, src.length);
-    } else {
-      output = null; //new String[0];
-    }
-    
-    return output;
-  }
-}
+ * 
+ */

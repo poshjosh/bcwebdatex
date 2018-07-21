@@ -1,34 +1,35 @@
 package com.bc.webdatex.context;
 
-import com.bc.webdatex.extractors.node.NodeExtractorConfig;
 import com.bc.json.config.JsonConfig;
-import com.bc.webdatex.extractors.node.AttributesExtractor;
 import com.bc.webdatex.filters.Filter;
-import com.bc.webdatex.formatters.Formatter;
 import com.bc.webdatex.extractors.DataExtractor;
 import java.util.Map;
 import org.htmlparser.NodeFilter;
-import com.bc.webdatex.extractors.MultipleNodesExtractor;
+import com.bc.webdatex.extractors.PageExtractor;
+import com.bc.webdatex.extractors.node.AttributesExtractor;
+import java.util.function.UnaryOperator;
 
-public abstract interface CapturerContext
-{
-  public abstract NodeExtractorConfig getNodeExtractorConfig();
+public interface CapturerContext {
+    
+  AttributesExtractor getAttributesExtractor(Object id);
+        
+  NodeExtractorConfig getNodeExtractorConfig();
   
-  public abstract AttributesExtractor getAttributesExtractor(String paramString);
+  JsonConfig getConfig();
   
-  public abstract JsonConfig getConfig();
+  PageExtractor getExtractor();
   
-  public abstract MultipleNodesExtractor getExtractor();
+  PageExtractor getExtractor(float tolerance, boolean greedy);
   
-  public abstract NodeFilter getFilter();
+  NodeFilter getFilter();
   
-  public abstract Filter<String> getCaptureUrlFilter();
+  Filter<String> getCaptureUrlFilter();
   
-  public abstract Filter<String> getScrappUrlFilter();
+  Filter<String> getScrappUrlFilter();
   
-  public abstract Formatter<Map<String, Object>> getFormatter();
+  UnaryOperator<Map<String, Object>> getFormatter();
   
-  public abstract Formatter<String> getUrlFormatter();
+  UnaryOperator<String> getUrlFormatter();
   
-  public abstract DataExtractor<String> getUrlDataExtractor();
+  DataExtractor<String> getUrlDataExtractor();
 }

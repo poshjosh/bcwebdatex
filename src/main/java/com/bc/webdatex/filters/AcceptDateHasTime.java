@@ -16,15 +16,17 @@
 
 package com.bc.webdatex.filters;
 
-import com.bc.util.Log;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 14, 2016 3:49:18 PM
  */
 public class AcceptDateHasTime implements Filter<Date> {
+
+    private transient static final Logger LOG = Logger.getLogger(AcceptDateHasTime.class.getName());
 
     private final Calendar calendar;
 
@@ -39,7 +41,9 @@ public class AcceptDateHasTime implements Filter<Date> {
                 this.calendar.get(Calendar.HOUR_OF_DAY) != 0 ||
                 this.calendar.get(Calendar.MINUTE) != 0 ||
                 this.calendar.get(Calendar.SECOND) != 0;
-        Log.getInstance().log(Level.FINER, "Has time: {0}, date: {1}", this.getClass(), output, date);
+        if(LOG.isLoggable(Level.FINER)) {
+            LOG.log(Level.FINER, "Has time: {0}, date: {1}", new Object[]{output, date});
+        }
         return output;
     }
 }

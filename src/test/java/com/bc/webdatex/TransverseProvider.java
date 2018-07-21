@@ -1,12 +1,13 @@
 package com.bc.webdatex;
 
-import com.bc.webdatex.locator.impl.TransverseBuilderImpl;
-import java.util.List;
+import com.bc.nodelocator.htmlparser.PathBuilderHtmlparser;
 import org.htmlparser.Parser;
 import org.htmlparser.Tag;
+import org.htmlparser.dom.HtmlDocument;
 import org.htmlparser.filters.HasAttributeFilter;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
+import com.bc.nodelocator.Path;
 
 
 /**
@@ -28,32 +29,32 @@ public class TransverseProvider {
         return getPath(getNodeList());
     }    
     
-    public static Tag getTargetNode(NodeList nodes) {
+    public static Tag getTargetNode(HtmlDocument nodes) {
         HasAttributeFilter f = new HasAttributeFilter("id", "target");
         NodeList target = nodes.extractAllNodesThatMatch(f, true);
         Tag tag = (Tag)target.get(0);
         return tag;
     }
         
-    public static String [] getPath(NodeList nodes) throws ParserException {
+    public static String [] getPath(HtmlDocument nodes) throws ParserException {
         
         Tag tag = getTargetNode(nodes);
 //System.out.println("Target node: "+tag.toTagHtml());        
         
-        TransverseBuilderImpl pathBuilder = new TransverseBuilderImpl();
+        PathBuilderHtmlparser transverseBuilder = new PathBuilderHtmlparser();
 //System.out.println("Parents: "+pathBuilder.getParents());        
 //System.out.println("Siblings: "+pathBuilder.getSiblings());
-        List<String> path = pathBuilder.build(tag);
+        Path<String> path = transverseBuilder.build(tag);
 //System.out.println("Path: "+path);
         
         return path.toArray(new String[0]);
     }
     
-    public static NodeList getNodeList() throws ParserException {
+    public static HtmlDocument getNodeList() throws ParserException {
         return getNodeList(getHtml());
     }
     
-    public static NodeList getNodeList(String html) throws ParserException {
+    public static HtmlDocument getNodeList(String html) throws ParserException {
         Parser parser = new Parser();
         parser.setInputHTML(html);
         return parser.parse(null);

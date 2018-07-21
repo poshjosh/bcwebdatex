@@ -26,14 +26,15 @@ import com.bc.webdatex.tags.Thead;
 import com.bc.webdatex.util.ParserConnectionManager;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.htmlparser.NodeFilter;
 import org.htmlparser.PrototypicalNodeFactory;
+import org.htmlparser.dom.HtmlDocument;
 import org.htmlparser.http.ConnectionMonitor;
 import org.htmlparser.util.EncodingChangeException;
-import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 import org.htmlparser.util.ParserFeedback;
 
@@ -45,18 +46,26 @@ public class ParserImpl extends org.htmlparser.Parser{
     private static final Logger logger = Logger.getLogger(ParserImpl.class.getName());
 
     private final List<String> cookies;
+    
+    private boolean processCookies = false;
+    
+    private int connectTimeout = 0;
+    
+    private int readTimeout = 0;
   
     public ParserImpl() {
         
-        cookies = new ArrayList();
+        cookies = processCookies ? new ArrayList() : Collections.EMPTY_LIST;
         
         org.htmlparser.Parser.setConnectionManager(new ParserConnectionManager());
 
         org.htmlparser.http.ConnectionManager cm = org.htmlparser.Parser.getConnectionManager();
 
+        cm.setMaxRedirects(3);
+        
         cm.setRedirectionProcessingEnabled(true);
 
-        cm.setCookieProcessingEnabled(true);
+        cm.setCookieProcessingEnabled(processCookies);
 
         cm.setMonitor(newConnectionMonitor());
 
@@ -89,12 +98,12 @@ public class ParserImpl extends org.htmlparser.Parser{
         });
     }
 
-    public NodeList parse(String url)  throws ParserException {
+    public HtmlDocument parse(String url)  throws ParserException {
      
         return this.parse(url, (node) -> true);
     }
 
-    public NodeList parse(String url, NodeFilter filter)  throws ParserException {
+    public HtmlDocument parse(String url, NodeFilter filter)  throws ParserException {
       
         this.setURL(url); 
         
@@ -102,9 +111,9 @@ public class ParserImpl extends org.htmlparser.Parser{
     }
 
     @Override
-    public NodeList parse(NodeFilter filter) throws ParserException {
+    public HtmlDocument parse(NodeFilter filter) throws ParserException {
 
-        NodeList list;
+        HtmlDocument list;
 
         try {
 
@@ -118,9 +127,10 @@ public class ParserImpl extends org.htmlparser.Parser{
         return list;
     }
 
-    private NodeList applyBugfix991895(EncodingChangeException ece, NodeFilter filter)
+    private HtmlDocument applyBugfix991895(EncodingChangeException ece, NodeFilter filter)
             throws ParserException {
-        logger.log(Level.WARNING, ece, () -> "PARSER CRASHED! Caught: " + ece.getClass().getName() + "\nApplying bug fix #991895");
+        
+        logger.fine(() -> "PARSER CRASHED! Applying bug fix #991895 for: " + ece);
 
         this.reset();
         
@@ -134,10 +144,18 @@ public class ParserImpl extends org.htmlparser.Parser{
             @Override
             public void preConnect(HttpURLConnection connection) throws ParserException {
                 logger.log(Level.FINER, "#preConnect. Connection: {0}", connection);
-                for (String cookie : cookies) {
-                    final String str = cookie.split(";", 2)[0].trim();
-                    System.out.println("====================================\nAdding cookie: " + str);
-                    connection.addRequestProperty("Cookie", str);
+                if(connectTimeout > 0) {
+                    connection.setConnectTimeout(connectTimeout);
+                }
+                if(readTimeout > 0) {
+                    connection.setReadTimeout(readTimeout);
+                }
+                if(processCookies) {
+                    for (String cookie : cookies) {
+                        final String str = cookie.split(";", 2)[0].trim();
+                        System.out.println("====================================\nAdding cookie: " + str);
+                        connection.addRequestProperty("Cookie", str);
+                    }
                 }
             }
 
@@ -161,5 +179,29 @@ public class ParserImpl extends org.htmlparser.Parser{
             });
             return true;
         }
+    }
+
+    public boolean isProcessCookies() {
+        return processCookies;
+    }
+
+    public void setProcessCookies(boolean processCookies) {
+        this.processCookies = processCookies;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
     }
 }

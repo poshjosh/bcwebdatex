@@ -1,35 +1,33 @@
 package com.bc.webdatex.context;
 
-import com.bc.webdatex.extractors.node.NodeExtractorConfig;
 import com.bc.json.config.JsonConfig;
-import com.bc.util.Log;
+import com.bc.nodelocator.ConfigName;
 import com.bc.webdatex.extractors.node.AttributesExtractor;
 import com.bc.webdatex.extractors.node.AttributesExtractorImpl;
 import com.bc.webdatex.filters.Filter;
-import com.bc.webdatex.formatters.Formatter;
-import com.bc.webdatex.config.Config;
 import com.bc.webdatex.extractors.DataExtractor;
-import com.bc.webdatex.extractors.MappingsExtractor;
-import com.bc.webdatex.extractors.MultipleNodesExtractorImpl;
+import com.bc.webdatex.extractors.PageExtractor;
+import com.bc.webdatex.extractors.PageExtractorImpl;
 import com.bc.webdatex.filters.CaptureUrlFilter;
-import com.bc.webdatex.filters.DefaultBoundsFilter;
 import com.bc.webdatex.filters.ScrappUrlFilter;
-import com.bc.webdatex.formatters.DefaultFormatter;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import org.htmlparser.NodeFilter;
-import com.bc.webdatex.extractors.MultipleNodesExtractor;
+import java.util.logging.Logger;
 
 public class CapturerContextImpl implements CapturerContext, Serializable
 {
+
+  private transient static final Logger LOG = Logger.getLogger(CapturerContextImpl.class.getName());
+  
   private JsonConfig config;
   private NodeExtractorConfig _settings;
   
-  public CapturerContextImpl()
-  {
+  public CapturerContextImpl() {
     this(null);
   }
   
@@ -38,8 +36,7 @@ public class CapturerContextImpl implements CapturerContext, Serializable
   }
   
   @Override
-  public NodeExtractorConfig getNodeExtractorConfig()
-  {
+  public NodeExtractorConfig getNodeExtractorConfig() {
     if (this._settings == null) {
       this._settings = new NodeExtractorConfigImpl(getConfig());
     }
@@ -47,17 +44,17 @@ public class CapturerContextImpl implements CapturerContext, Serializable
   }
   
   @Override
-  public AttributesExtractor getAttributesExtractor(String propertyKey)
+  public AttributesExtractor getAttributesExtractor(Object id)
   {
-    return getAttributesExtractor(getConfig(), propertyKey);
+    return getAttributesExtractor(getConfig(), id);
   }
   
-  public AttributesExtractor getAttributesExtractor(JsonConfig config, String propertyKey)
+  public AttributesExtractor getAttributesExtractor(JsonConfig config, Object id)
   {
-    String[] toExtract = getArray(getConfig(), propertyKey, Config.Extractor.attributesToExtract);
+    String[] toExtract = getArray(getConfig(), id, ConfigName.attributesToExtract);
     
     if (toExtract == null) {
-      return null;
+      return (tag, attrs) -> new String[0];
     }
     
     AttributesExtractor attributesExtractor = (AttributesExtractor)loadInstance(config, "attributesExtractor");
@@ -65,7 +62,7 @@ public class CapturerContextImpl implements CapturerContext, Serializable
 
     if (attributesExtractor == null)
     {
-      attributesExtractor = new AttributesExtractorImpl(propertyKey);
+      attributesExtractor = new AttributesExtractorImpl(id);
     }
     
     return attributesExtractor;
@@ -78,22 +75,12 @@ public class CapturerContextImpl implements CapturerContext, Serializable
   }
   
   @Override
-  public DataExtractor<String> getUrlDataExtractor()
-  {
+  public DataExtractor<String> getUrlDataExtractor() {
     return getUrlDataExtractor(getConfig());
   }
   
-  public DataExtractor<String> getUrlDataExtractor(JsonConfig config)
-  {
+  public DataExtractor<String> getUrlDataExtractor(JsonConfig config) {
     DataExtractor<String> urlDataExtractor = (DataExtractor)loadInstance(config, "urlDataExtractor");
-    
-
-    if (urlDataExtractor == null)
-    {
-
-      urlDataExtractor = MappingsExtractor.getInstance(MappingsExtractor.Type.url.name(), config);
-    }
-    
     return urlDataExtractor;
   }
   
@@ -115,18 +102,22 @@ public class CapturerContextImpl implements CapturerContext, Serializable
   }
   
   @Override
-  public MultipleNodesExtractor getExtractor()
-  {
-    return getExtractor(getConfig());
+  public PageExtractor getExtractor() {
+    return getExtractor(0.0f, false);
   }
   
-  public MultipleNodesExtractor getExtractor(JsonConfig config) {
+  @Override
+  public PageExtractor getExtractor(float tolerance, boolean greedy) {
+    return this.getExtractor(this, tolerance, greedy);
+  }
+  
+  public PageExtractor getExtractor(CapturerContext context, float tolerance, boolean greedy) {
       
-    MultipleNodesExtractor extractor = (MultipleNodesExtractor)loadInstance(config, "extractor");
+    PageExtractor extractor = (PageExtractor)loadInstance(context.getConfig(), "extractor");
     
     if (extractor == null)
     {
-      extractor = new MultipleNodesExtractorImpl(this);
+      extractor = new PageExtractorImpl(context, tolerance, greedy);
     }
     return extractor;
   }
@@ -139,37 +130,18 @@ public class CapturerContextImpl implements CapturerContext, Serializable
   
 
 
-  public NodeFilter getFilter(JsonConfig config)
-  {
-    String key = config.getString(new Object[] { "parentNode", "value" });
-    
-    if (key == null) {
-      return null;
-    }
-    
+  public NodeFilter getFilter(JsonConfig config){
     NodeFilter filter = (NodeFilter)loadInstance(getConfig(), "filter");
-    
-    if (filter == null)
-    {
-      filter = new DefaultBoundsFilter(getConfig());
-    }
     return filter;
   }
   
   @Override
-  public Formatter<Map<String, Object>> getFormatter()
-  {
+  public UnaryOperator<Map<String, Object>> getFormatter(){
     return getFormatter(this);
   }
   
-  public Formatter<Map<String, Object>> getFormatter(CapturerContext context) {
-    Formatter<Map<String, Object>> formatter = (Formatter)loadInstance(context.getConfig(), "formatter");
-    
-
-    if (formatter == null)
-    {
-      formatter = new DefaultFormatter(context);
-    }
+  public UnaryOperator<Map<String, Object>> getFormatter(CapturerContext context) {
+    final UnaryOperator<Map<String, Object>> formatter = (UnaryOperator)loadInstance(context.getConfig(), "formatter");
     return formatter;
   }
   
@@ -191,13 +163,13 @@ public class CapturerContextImpl implements CapturerContext, Serializable
   }
   
   @Override
-  public Formatter<String> getUrlFormatter()
+  public UnaryOperator<String> getUrlFormatter()
   {
     return getUrlFormatter(getConfig());
   }
   
-  public Formatter<String> getUrlFormatter(JsonConfig config) {
-    Formatter<String> urlFormatter = (Formatter)loadInstance(config, "urlFormatter");
+  public UnaryOperator<String> getUrlFormatter(JsonConfig config) {
+    UnaryOperator<String> urlFormatter = (UnaryOperator)loadInstance(config, "urlFormatter");
     if(urlFormatter == null) {
         urlFormatter = (url) -> url;
     }
@@ -241,14 +213,14 @@ public class CapturerContextImpl implements CapturerContext, Serializable
         output = Class.forName(className).getConstructor(new Class[] { parameterType }).newInstance(new Object[] { initarg });
       }
     } catch (ClassNotFoundException|InstantiationException|IllegalAccessException|NoSuchMethodException|InvocationTargetException e) {
-      Log.getInstance().log(Level.WARNING, "{0}", getClass(), e.toString());
+      LOG.log(Level.WARNING, "{0}", e.toString());
     }
     return output;
   }
   
 
 
-  private String[] getArray(JsonConfig config, String prefix, Object key)
+  private String[] getArray(JsonConfig config, Object prefix, Object key)
   {
     List val = config.getList(new Object[] { prefix, key });
     

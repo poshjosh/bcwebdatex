@@ -1,14 +1,9 @@
 package com.bc.webdatex;
 
-import com.bc.json.config.JsonConfig;
-import com.bc.util.Log;
-import com.bc.webdatex.context.ScrapperContextFactory;
-import com.bc.webdatex.url.ConfigURLList;
-import com.bc.webdatex.util.Util;
+import java.util.logging.Logger;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Properties;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +28,7 @@ import org.junit.Test;
  * @since    0.2
  */
 public class BasicTests {
+    private transient static final Logger LOG = Logger.getLogger(BasicTests.class.getName());
     
     static final URI configsDir = null;
     static final Properties ftpProperties = null;
@@ -49,7 +45,7 @@ public class BasicTests {
             Div parent = new Div();
             parent.setAttribute("id", "parent");
             
-            NodeList siblings = new NodeList();
+            NodeList siblings = new org.htmlparser.util.NodeListImpl();
             parent.setChildren(siblings);
             
             Span sibling = new Span();
@@ -64,7 +60,7 @@ public class BasicTests {
             siblings.add(tag);
             tag.setParent(parent);
             
-            NodeList children = new NodeList();
+            NodeList children = new org.htmlparser.util.NodeListImpl();
             tag.setChildren(children);
             
             LinkTag linkTag = new LinkTag();
@@ -83,32 +79,37 @@ public class BasicTests {
             children.add(child_2);
             child_2.setParent(tag);
             
-            NodeList grandChildren = new NodeList();
+            NodeList grandChildren = new org.htmlparser.util.NodeListImpl();
             child_2.setChildren(grandChildren);
             
             TextNode grandChild = new TextNode("This is some text");
             grandChildren.add(grandChild);
             grandChild.setParent(child_2);
             
-Log.getInstance().log(Level.INFO, "Before clone1, Tag: {0}, Children: {1}", 
-    BasicTests.class, tag.toTagHtml(), tag.getChildren()==null?null:tag.getChildren().size());            
+if(LOG.isLoggable(Level.INFO)){
+LOG.log(Level.INFO, "Before clone1, Tag: {0}, Children: {1}", 
+new Object[]{ tag.toTagHtml(),  tag.getChildren()==null?null:tag.getChildren().size()});
+}            
             
-//            Tag clone = (Tag)tag.clone();
             Tag clone;
             try{
-                clone = (Tag)Util.deepClone(tag);
+                clone = (Tag)tag.deepClone();
             }catch(CloneNotSupportedException e) {
                 return;
             }
             
-Log.getInstance().log(Level.INFO, "After clone1, Tag: {0}, Children: {1}", 
-    BasicTests.class, clone.toTagHtml(), clone.getChildren()==null?null:clone.getChildren().size());            
+if(LOG.isLoggable(Level.INFO)){
+LOG.log(Level.INFO, "After clone1, Tag: {0}, Children: {1}", 
+new Object[]{ clone.toTagHtml(),  clone.getChildren()==null?null:clone.getChildren().size()});
+}            
 
             boolean a = tag.getParent().getChildren().contains(tag);
             boolean b = clone.getParent().getChildren().contains(clone);
 
-Log.getInstance().log(Level.INFO, "Consistency test on Tag passed: {0}, on clone passed: {1}", 
-    BasicTests.class, a, b);            
+if(LOG.isLoggable(Level.INFO)){
+LOG.log(Level.INFO, "Consistency test on Tag passed: {0}, on clone passed: {1}", 
+new Object[]{ a,  b});
+}            
 
 //XLogger.getInstance().log(Level.INFO, "Tag structure: {0}", BasicTests.class, new TagStructure().build(tag));            
 
@@ -116,54 +117,17 @@ Log.getInstance().log(Level.INFO, "Consistency test on Tag passed: {0}, on clone
             
             clone.getChildren().removeAll();
 
-Log.getInstance().log(Level.INFO, "After removing clone children, Tag: {0}, Children: {1}", 
-    BasicTests.class, tag.toTagHtml(), tag.getChildren()==null?null:tag.getChildren().size());            
+if(LOG.isLoggable(Level.INFO)){
+LOG.log(Level.INFO, "After removing clone children, Tag: {0}, Children: {1}", 
+new Object[]{ tag.toTagHtml(),  tag.getChildren()==null?null:tag.getChildren().size()});
+}            
 
         }catch(RuntimeException e) {
 
-            Log.getInstance().log(Level.WARNING, "", BasicTests.class, e);
-        }
-    }
-    
-//    @Test
-    public void testMultiURLList() throws Exception {
-        
-        ScrapperContextFactory factory = new ScrapperContextFactory(
-                configsDir, ftpProperties
-        );
-        
-        Set<String> names = factory.getConfigNames();
-    
-        for(String name:names) {
-            
-            JsonConfig config = factory.getConfig(name);
-            
-//            if(ConfigURLPartList.getSerialPart(config, "counter") == null) {
-//                continue;
-//            }
-            
-            Object oval = config.getObject("url", "counter");
-            
-            if(oval == null) {
-                continue;
+            if(LOG.isLoggable(Level.WARNING)){
+                  LOG.log(Level.WARNING, "", e);
             }
-            
-            testMultiURLList(config);
         }
-    }
-    
-    private void testMultiURLList(JsonConfig config) {
-        ConfigURLList list = new ConfigURLList();
-        list.update(config, "counter");
-System.out.println("List size: "+(list==null?null:list.size()));        
-        if(list == null || list.isEmpty()) {
-            return;
-        }
-StringBuilder builder = new StringBuilder("PRINTING LIST FOR: "+config.getName());        
-        for(String url:list) {
-builder.append('\n').append(url);
-        }
-System.out.println(builder.toString());        
     }
     
     @Test

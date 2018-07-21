@@ -1,6 +1,9 @@
 package com.bc.webdatex.nodefilters;
 
+import com.bc.nodelocator.ConfigName;
+import com.bc.webdatex.context.NodeExtractorConfig;
 import java.util.Arrays;
+import java.util.Objects;
 import org.htmlparser.Node;
 
 
@@ -17,51 +20,60 @@ import org.htmlparser.Node;
  * @version  2.0
  * @since    2.0
  */
-public class NodesFilterImpl implements NodesFilter {
+public class NodesFilterImpl extends FilterNode implements NodesFilter {
     
-    private String id;
+    private final Object id;
 
-    private String [] nodeTypesToAccept;
+    private final String [] nodeTypesToAccept;
     
-    private String [] nodeTypesToReject;
+    private final String [] nodeTypesToReject;
     
-    private String [] nodesToAccept;
+    private final String [] nodesToAccept;
     
-    private String [] nodesToReject;
+    private final String [] nodesToReject;
+
+    public NodesFilterImpl(Object id, NodeExtractorConfig config) { 
+        this(
+                id, 
+                config.getNodeTypesToAccept(id),
+                config.getNodeTypesToReject(id),
+                config.getNodesToAccept(id),
+                config.getNodeToReject(id));
+    }
     
-    public NodesFilterImpl() { }
+    public NodesFilterImpl(Object id, 
+            String [] nodeTypesToAccept, String [] nodeTypesToReject,
+            String [] nodesToAccept, String [] nodesToReject) { 
+        this.id = Objects.requireNonNull(id);
+        this.nodeTypesToAccept = nodeTypesToAccept;
+        this.nodeTypesToReject = nodeTypesToReject;
+        this.nodesToAccept = nodesToAccept;
+        this.nodesToReject = nodesToReject;
+    }
 
     @Override
     public boolean accept(Node node) {
 
-        boolean accept = this.accept(FilterFactory.FilterType.nodeTypesToAccept, node) &&
-                 this.accept(FilterFactory.FilterType.nodeTypesToReject, node) &&
-                 this.accept(FilterFactory.FilterType.nodesToAccept, node) &&
-                 this.accept(FilterFactory.FilterType.nodesToAccept, node);
+        boolean accept = this.accept(ConfigName.nodeTypesToAccept, node) &&
+                 this.accept(ConfigName.nodeTypesToReject, node) &&
+                 this.accept(ConfigName.nodesToAccept, node) &&
+                 this.accept(ConfigName.nodesToAccept, node);
         
         return accept;
     }
     
-    private boolean accept(FilterFactory.FilterType filterType, Node node) {
+    private boolean accept(ConfigName filterType, Node node) {
 
         String [] nodeIds = this.getNodeIds(filterType);
         
         if(nodeIds == null || nodeIds.length == 0) {
             return true;
         }else{
-            return this.getFilterFactory().filterNode(filterType, nodeIds, node);
+            return this.execute(filterType, nodeIds, node);
         }
     }    
     
-    private FilterFactory _ff_accessViaGetter;
-    public FilterFactory getFilterFactory() {
-        if(_ff_accessViaGetter == null) {
-            _ff_accessViaGetter = new FilterFactory();
-        }
-        return _ff_accessViaGetter;
-    }
-        
-    private String [] getNodeIds(FilterFactory.FilterType filterType) {
+    private String [] getNodeIds(ConfigName filterType) {
         switch(filterType) {
             case nodeTypesToAccept:
                 return this.nodeTypesToAccept;
@@ -72,29 +84,18 @@ public class NodesFilterImpl implements NodesFilter {
             case nodesToReject:
                 return this.nodesToReject;
             default:
-                throw new IllegalArgumentException("Unexpected " + FilterFactory.FilterType.class.getName() + 
-                ": "+filterType+", expected any of: "+Arrays.toString(FilterFactory.FilterType.values()));
+                throw new IllegalArgumentException("Unexpected " + filterType.getClass().getName() + 
+                ": "+filterType+", expected any of: "+Arrays.toString(ConfigName.values()));
         }
     }
 
-    @Override
-    public String getId() {
+    public final Object getId() {
         return id;
     }
 
     @Override
-    public void setId(String id) {
-        this.id = id;
-    }
-    
-    @Override
     public String[] getNodeTypesToAccept() {
         return nodeTypesToAccept;
-    }
-
-    @Override
-    public void setNodeTypesToAccept(String[] nodeTypesToAccept) {
-        this.nodeTypesToAccept = nodeTypesToAccept;
     }
 
     @Override
@@ -103,28 +104,13 @@ public class NodesFilterImpl implements NodesFilter {
     }
 
     @Override
-    public void setNodeTypesToReject(String[] nodeTypesToReject) {
-        this.nodeTypesToReject = nodeTypesToReject;
-    }
-
-    @Override
     public String[] getNodesToAccept() {
         return nodesToAccept;
     }
 
     @Override
-    public void setNodesToAccept(String[] nodesToAccept) {
-        this.nodesToAccept = nodesToAccept;
-    }
-
-    @Override
     public String[] getNodesToReject() {
         return nodesToReject;
-    }
-
-    @Override
-    public void setNodesToReject(String[] nodesToReject) {
-        this.nodesToReject = nodesToReject;
     }
 
     @Override

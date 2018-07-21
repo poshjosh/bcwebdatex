@@ -16,19 +16,21 @@
 
 package com.bc.webdatex.extractors.date;
 
-import com.bc.util.Log;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 import com.bc.webdatex.extractors.TextParser;
+import java.text.MessageFormat;
+import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Sep 17, 2016 12:51:05 PM
  */
 public class DateFromUrlExtractor implements TextParser<Date> {
+
+    private transient static final Logger LOG = Logger.getLogger(DateFromUrlExtractor.class.getName());
     
     private final TextParser<String> dateStringFromUrlExtractor;
     private final TextParser<Date> dateExtractor;
@@ -66,8 +68,7 @@ public class DateFromUrlExtractor implements TextParser<Date> {
         
         final String dateString = this.dateStringFromUrlExtractor.extract(url, null);
 
-        Log.getInstance().log(Level.FINER, "Found date string: {0}, in URL: {1}", 
-                this.getClass(), dateString, url);
+        LOG.finer(() -> MessageFormat.format("Found date string: {0}, in URL: {1}", dateString, url));
         
         Date output;
         

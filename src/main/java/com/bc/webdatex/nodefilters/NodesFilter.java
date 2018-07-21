@@ -11,12 +11,25 @@ import org.htmlparser.NodeFilter;
  * NUROX Ltd PROPRIETARY/CONFIDENTIAL. Use is subject to license 
  * terms found at http://www.looseboxes.com/legal/licenses/software.html
  */
-public interface NodesFilter extends NodeFilter<Node> {
+public interface NodesFilter extends NodeFilter {
+    
+    String [] EMPTY_ARRAY = new String[0];
+    
+    NodesFilter ACCEPT_ALL = new NodesFilter() {
+        @Override
+        public boolean accept(Node node) { return true; }
+        @Override
+        public String[] getNodeTypesToAccept() { return EMPTY_ARRAY; }
+        @Override
+        public String[] getNodeTypesToReject() { return EMPTY_ARRAY; }
+        @Override
+        public String[] getNodesToAccept() { return EMPTY_ARRAY; }
+        @Override
+        public String[] getNodesToReject() { return EMPTY_ARRAY; }
+    };
 
     @Override
     boolean accept(Node node);
-
-    String getId();
 
     String[] getNodeTypesToAccept();
 
@@ -25,15 +38,4 @@ public interface NodesFilter extends NodeFilter<Node> {
     String[] getNodesToAccept();
 
     String[] getNodesToReject();
-
-    void setId(String id);
-
-    void setNodeTypesToAccept(String[] nodeTypesToAccept);
-
-    void setNodeTypesToReject(String[] nodeTypesToReject);
-
-    void setNodesToAccept(String[] nodesToAccept);
-
-    void setNodesToReject(String[] nodesToReject);
-
 }

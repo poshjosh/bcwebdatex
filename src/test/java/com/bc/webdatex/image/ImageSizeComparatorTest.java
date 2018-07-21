@@ -43,7 +43,6 @@ public class ImageSizeComparatorTest {
                 Arrays.asList(
                         "http://leadership.ng/wp-content/uploads/2016/11/donALD-TRUMPEE-300x160.jpg",
                         "http://leadership.ng/wp-content/uploads/2014/11/Mechanics-working-at-an-open-space-in-Abuja.-180x300.jpg",
-                        "http://leadership.24hubs.netdna-cdn.com/wp-content/uploads/2016/03/button-extension-install.c284a921ad9c8cae6279fe7a2dea5b5c.png",
                         "http://www.leadership.ng/wp-content/uploads/2016/10/explosion-300x188.jpg",
                         "http://leadership.ng/wp-content/uploads/2013/12/nigeria_soldiers-300x224.jpg",
                         "http://leadership.ng/wp-content/uploads/2016/11/trump-wins-300x212.jpg"

@@ -1,20 +1,20 @@
 package com.bc.webdatex.nodefilters;
 
-import com.bc.webdatex.bounds.BoundsMarker;
-import com.bc.webdatex.visitors.BoundsVisitor;
-import com.bc.util.StringArrayUtils;
-import com.bc.util.Log;
+import com.bc.nodelocator.NodeLocatingFilter;
+import com.bc.nodelocator.impl.NodeLocatingFilterGreedy;
+import com.bc.nodelocator.impl.NodeLocatingFilterImpl;
+import com.bc.webdatex.context.NodeExtractorConfig;
+import com.bc.nodelocator.htmlparser.NodeMatcherHtmlparser;
+import java.util.logging.Logger;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import org.htmlparser.Node;
-import org.htmlparser.NodeFilter;
 import org.htmlparser.Remark;
 import org.htmlparser.Tag;
 import org.htmlparser.Text;
-import com.bc.webdatex.locator.TagLocator;
-
 
 /**
  * @(#)NodeVisitingFilter.java   29-Sep-2015 13:57:11
@@ -23,253 +23,199 @@ import com.bc.webdatex.locator.TagLocator;
  * NUROX Ltd PROPRIETARY/CONFIDENTIAL. Use is subject to license 
  * terms found at http://www.looseboxes.com/legal/licenses/software.html
  */
-
 /**
  * @author   chinomso bassey ikwuagwu
  * @version  2.0
  * @since    2.0
  */
-public class NodeVisitingFilterImpl 
-        implements NodeVisitingFilter, Serializable {
+public class NodeVisitingFilterImpl implements NodeVisitingFilter, Serializable {
+    
+    private transient static final Logger LOG = Logger.getLogger(NodeVisitingFilterImpl.class.getName());
 
-    private boolean started;
+    private boolean startedTarget;
     
     /**
      * If true, the extraction of the current page should not be continued
      */
-    private boolean done;
+    private boolean doneTarget;
     
     /**
      * Once started, this variable indicates the index
      */
     private int visitedStartTags;
     
-    private String id;
-    
-    private String [] textToDisableOn;
-    
     private List<Tag> transverseEndTags;
     
     private List<Tag> expectedEndTags;
     
-    private TextFilter textFilter;
+    private final Object id;
     
-    private BoundsVisitor boundsVisitor;
+    private final TextFilter textFilter;
     
-    private NodesFilter nodesFilter;
+    private final NodesFilter nodesFilter;
     
-    private NodeFilter tagFilter;
-    
-    private TagLocator tagLocator;
-    
-    public NodeVisitingFilterImpl( ) { 
-        this.init(null, null, null);
-    }
-    
-    public NodeVisitingFilterImpl(String id, BoundsVisitor v, NodeFilter target) {
-        this.init(id, v, target);
-    }
-    
-    public NodeVisitingFilterImpl(String id, NodeFilter parent, 
-    NodeFilter startAt, NodeFilter stopAt, NodeFilter target) {
+    private NodeLocatingFilter<Node> nodeLocator;
 
-        this.id = id;
-        
-        BoundsVisitor visitor = new BoundsVisitor(id, parent, startAt, stopAt);
-        
-        visitor.setStrict(true);
-        
-        this.init(id, visitor, target);
+    public NodeVisitingFilterImpl(Object id, NodeExtractorConfig config, float tolerance, boolean greedy) {
+        this(id, config, 
+                greedy ? 
+                new NodeLocatingFilterGreedy(
+                        id, config.getPathFlattened(id), new NodeMatcherHtmlparser(tolerance)
+                ) :
+                new NodeLocatingFilterImpl(
+                        id, config.getPathFlattened(id), new NodeMatcherHtmlparser(tolerance)
+                ) 
+        );
     }
     
-    private void init(String id, BoundsVisitor visitor, NodeFilter target) {
+    public NodeVisitingFilterImpl(Object id, NodeExtractorConfig config, NodeLocatingFilter<Node> nodeLocator) {
+        
+        this.id = Objects.requireNonNull(id);
+        
+        final String[] textToReject = config.getTextToReject(id);
+        this.textFilter = textToReject == null || textToReject.length == 0 ?
+                TextFilter.ACCEPT_ALL : new TextFilterImpl(id, null, config.getTextToReject(id));
+        
+        final String [] nodeTypesToAccept = config.getNodeTypesToAccept(id); 
+        final String [] nodeTypesToReject = config.getNodeTypesToReject(id);
+        final String [] nodesToAccept = config.getNodesToAccept(id);
+        final String [] nodesToReject = config.getNodeToReject(id);
+        if(nodeTypesToAccept == null || nodeTypesToAccept.length == 0 &&
+                nodeTypesToReject == null || nodeTypesToReject.length == 0 &&
+                nodesToAccept == null || nodesToAccept.length == 0 &&
+                nodesToReject == null || nodesToReject.length == 0) {
+            this.nodesFilter = NodesFilter.ACCEPT_ALL;
+        }else{
+            this.nodesFilter = new NodesFilterImpl(
+                    id, 
+                    nodeTypesToAccept, nodeTypesToReject,
+                    nodesToAccept, nodesToReject
+            );
+        }
 
-        this.id = id;
-        
-        this.boundsVisitor = visitor;
-        
-        this.tagFilter = target;
+        this.nodeLocator = Objects.requireNonNull(nodeLocator);
     }
     
     @Override
     public void reset() {
-        this.started = false;
-        this.done = false;
+        this.startedTarget = false;
+        this.doneTarget = false;
         this.visitedStartTags = 0; 
         if(this.transverseEndTags != null) this.transverseEndTags.clear();
         this.transverseEndTags = null;
         if(this.expectedEndTags != null) this.expectedEndTags.clear();
         this.expectedEndTags = null;
-        if(this.tagLocator != null) {
-            this.tagLocator.reset();
+        if(this.nodeLocator != null) {
+            this.nodeLocator.reset();
         }
-        if(this.boundsVisitor != null) {
-            this.boundsVisitor.reset();
-        }
-    }
-    
-    @Override
-    public boolean accept(Node node) {
-        boolean output;
-        if(node instanceof Tag) {
-            Tag tag = (Tag)node;
-            if(!tag.isEndTag()) {
-                output = this.acceptTag(tag);
-            }else {
-                output = this.acceptEndTag(tag);
-            }
-        }else if(node instanceof Text) {
-            output = this.acceptStringNode((Text)node);
-        }else if(node instanceof Remark) {
-            output = this.acceptRemarkNode((Remark)node);
-        }else {
-            // Unknown node, may be Tag type was not registered
-            output = false;
-        }
-        return output;
     }
     
     @Override
     public boolean acceptTag(Tag tag) {
         
-//final boolean LOG = "targetNode5".equals(id);
+        final Level level = startedTarget && !doneTarget ? Level.FINE : Level.FINER;  
+
+        if(LOG.isLoggable(level)) {
+            LOG.log(level, "{0} Tag: {1}", new Object[]{id, tag.toTagHtml()});
+        }
         
-final Level level = started && !done ? Level.FINE : Level.FINER;  
-
-Log.getInstance().log(level, "{0}-{1}, Tag: {2}", 
-this.getClass(), id, this.getClass().getSimpleName(), tag.toTagHtml());
-
         // Only start tags are counted
         visitedStartTags++;
         
-        if(this.done) {
+        if(this.doneTarget) {
             return false;
         }
-//if(LOG) System.out.println(this.getClass().getName()+". Tag: "+tag.toTagHtml());
-
-        if(this.boundsVisitor != null) {
-            boundsVisitor.visitTag(tag);
-        }    
         
-        boolean foundTarget;
-        
-        if(this.tagLocator != null) {
-            
-            this.tagLocator.visitTag(tag);
-
-            foundTarget = this.tagLocator.isFoundTarget();
-            
-        }else{
-            
-            foundTarget = false;
-        }
+        final boolean foundTarget = this.nodeLocator.test(tag);
 
         if(foundTarget || this.isWithinTarget()) {
-            
             this.addTransverseEndTag(tag);
         }
         
         boolean accept;
         
-        boolean withinBounds = this.isWithinBounds(); 
+        if(LOG.isLoggable(level)) {
+            LOG.log(level, "Found target: {0}, within target: {1}", 
+                new Object[]{foundTarget, this.isWithinTarget()});
+        }
         
-Log.getInstance().log(level, "Locator accept: {0}, found target: {1}, within bounds: {2}, within target: {3}", 
-this.getClass(), (this.tagLocator==null?null:this.tagLocator.isLastTagAccepted()), 
-foundTarget, withinBounds, this.isWithinTarget());
-        
-        if(withinBounds && (foundTarget || this.isWithinTarget())) {
+        if(foundTarget || this.isWithinTarget()) {
 
-if(!started) {            
-    Log.getInstance().log(Level.FINER, "{0}-{1} STARTED ", this.getClass(), id, this.getClass().getSimpleName());
-}            
-            started = true;
+            if(!startedTarget) {            
+                LOG.log(Level.FINER, "{0} STARTED", id);
+            }            
             
-            accept = (tagFilter == null || tagFilter.accept(tag));
+            startedTarget = true;
+            
+            accept = true;
 
-            if(accept) {
-                
-                this.addExpectedEndTag(tag);
-            }
+            this.addExpectedEndTag(tag);
+
         }else{
             
-            if(started) {
-                done = true;
-Log.getInstance().log(Level.FINER, "{0}-{1} DONE ", this.getClass(), id, this.getClass().getSimpleName());
+            if(startedTarget) {
+                doneTarget = true;
+                LOG.log(Level.FINER, "{0} DONE", id);
             }
             
             accept = false;
         }
         
-Log.getInstance().log(Level.FINER, "{0}-NodeVisitingFilter. accepted: {1}, index: {2}, Tag: {3}", 
-        this.getClass(), id, accept, visitedStartTags, tag.toTagHtml()); 
-
-//if(LOG && accept) System.out.println(this.getClass().getName()+". Accepted: "+accept+", "+tag.toTagHtml());
+        if(LOG.isLoggable(Level.FINER)){
+            LOG.log(Level.FINER, "{0}-NodeVisitingFilter. accepted: {1}, index: {2}, Tag: {3}", 
+                new Object[]{id, accept, visitedStartTags, tag.toTagHtml()});
+        } 
 
         return accept;
     }
     
     @Override
     public boolean acceptEndTag(Tag tag) {
-        
-        if(this.done) {
+
+        if(this.doneTarget) {
             return false;
         }
         
-        if(this.boundsVisitor != null) {
-            boundsVisitor.visitEndTag(tag);
-        }    
+        final boolean a = this.expectedEndTags != null && this.expectedEndTags.remove(tag);
 
-        boolean a = this.expectedEndTags != null && this.expectedEndTags.remove(tag);
+        final boolean b = this.transverseEndTags != null && this.transverseEndTags.remove(tag);
 
-        boolean b = this.transverseEndTags != null && this.transverseEndTags.remove(tag);
+        if(startedTarget && !this.isWithinTarget()) {
+            doneTarget = true;
+            LOG.log(Level.FINER, "{0} DONE", id);
+        }
 
-        if(started && !this.isWithinTarget()) {
-            done = true;
-Log.getInstance().log(Level.FINER, "{0}-{1} DONE ", this.getClass(), id, this.getClass().getSimpleName());
+        if(LOG.isLoggable(Level.FINER)){
+            LOG.log(Level.FINER, "  Expected end tags: {0}\nTransverse end tags: {1}", 
+                new Object[]{this.toSimpleString(expectedEndTags), this.toSimpleString(transverseEndTags)});
         }
         
-Log.getInstance().log(Level.FINER, "  Expected end tags: {0}\nTransverse end tags: {1}", 
-this.getClass(), this.toSimpleString(expectedEndTags), this.toSimpleString(transverseEndTags));
-        
-        
-        boolean accept;
-        if(this.tagLocator != null) {
-            accept = a || b;
-        }else{
-            accept = a;
-        }
-        
+        final boolean accept = a || b;
+
+        LOG.finer(() -> "Accepted END: "+accept+", "+tag.toTagHtml());
+
         return accept;
     }
     
     @Override
     public boolean acceptStringNode(Text node) {
 
-        final boolean LOG = false; //"targetNode5".equals(id);
-if(LOG) System.out.println(this.getClass().getName() + "#acceptStringNode(Text)");        
-        if(this.done) {
+        if(this.doneTarget) {
             return false;
         }
-        
-        if(this.boundsVisitor != null) {
-            boundsVisitor.visitStringNode(node);
-        }   
 
-        this.tryDisable(node);
-        
-        final boolean withinBounds;
-        boolean acceptedByTextFilter = false;
+        boolean acceptedByTextFilter;
         boolean withinTarget = false;
         
-        final boolean accept = (withinBounds = this.isWithinBounds()) && 
-                (acceptedByTextFilter = this.isAcceptedByTextFilter(node, true)) && 
+        final boolean accept = (acceptedByTextFilter = this.isAcceptedByTextFilter(node, true)) && 
                 (withinTarget = this.isWithinTarget());
-//                this.isWithinBounds() && this.isAcceptedByTextFilter(node) && this.isWithinTarget();
+//                this.isAcceptedByTextFilter(node) && this.isWithinTarget();
         
-if(LOG) System.out.println(this.getClass().getName() + ". Accept: " +accept+ ". within bounds: "+withinBounds+", textFilter accepts: "+acceptedByTextFilter+", within target: "+withinTarget);
-
-Log.getInstance().log(Level.FINER, "{0}-NodeVisitingFilter@acceptStringNode. accepted: {1}, Text: {2}", 
-        this.getClass(), id, accept, node);                
+        if(LOG.isLoggable(Level.FINER)){
+            LOG.log(Level.FINER, 
+                    "{0}-NodeVisitingFilter@acceptStringNode. accepted: {1}, Text: {2}\n accepted by text filter: {3}, within target: {4}", 
+                    new Object[]{id, accept, node, acceptedByTextFilter, withinTarget});
+        }                
         
         return accept;
     }
@@ -281,58 +227,18 @@ Log.getInstance().log(Level.FINER, "{0}-NodeVisitingFilter@acceptStringNode. acc
     @Override
     public boolean acceptRemarkNode(Remark node) {
         
-        if(this.done) {
+        if(this.doneTarget) {
             return false;
         }
-        
-        if(this.boundsVisitor != null) {
-            boundsVisitor.visitRemarkNode(node);
-        }    
-
-        this.tryDisable(node);
         
         // We don't accept remarks
         return false;
     }
     
-    private void tryDisable(Node node) {
-        if(!this.done) {
-            this.done = this.textToDisableOn != null && this.textToDisableOn.length != 0 && 
-                    StringArrayUtils.matches(textToDisableOn, node.getText(), StringArrayUtils.MatchType.EQUALS);
-        }
-    }
-    
     public boolean isWithinTarget() {
-        boolean output;
-        boolean a = this.expectedEndTags != null && !this.expectedEndTags.isEmpty();
-        if(this.tagLocator != null) {
-            boolean b = this.transverseEndTags != null && !this.transverseEndTags.isEmpty();
-            output = a || b;
-        }else{
-            output = a;
-        }
+        final boolean output = (this.expectedEndTags != null && !this.expectedEndTags.isEmpty()) ||
+                (this.transverseEndTags != null && !this.transverseEndTags.isEmpty());
         return output;
-    }
-    
-    @Override
-    public boolean isWithinBounds() {
-    
-        boolean isWithin = boundsVisitor == null || (boundsVisitor.isStarted() && !boundsVisitor.isDone());
-        
-Log.getInstance().log(Level.FINER, "Is within: {0}, is started: {1}, is done: {2}", 
-        this.getClass(), isWithin, 
-        boundsVisitor==null?"null":boundsVisitor.isStarted(), 
-        boundsVisitor==null?"null":boundsVisitor.isDone());
-
-        return isWithin;
-    }
-    
-    private NodesFilter initNodesFilter() {
-        if(nodesFilter == null) {
-            nodesFilter = new NodesFilterImpl();
-            nodesFilter.setId(id);
-        }
-        return nodesFilter;
     }
     
     private void addTransverseEndTag(Tag tag) {
@@ -345,7 +251,10 @@ Log.getInstance().log(Level.FINER, "Is within: {0}, is started: {1}, is done: {2
 
             this.transverseEndTags.add(tag.getEndTag());
 
-Log.getInstance().log(Level.FINEST, "Transverse end tags: {0}", this.getClass(), this.toSimpleString(transverseEndTags));
+            if(LOG.isLoggable(Level.FINEST)){
+                LOG.log(Level.FINEST, "Transverse end tags: {0}", 
+                        this.toSimpleString(transverseEndTags));
+            }
         }
     }
 
@@ -359,7 +268,10 @@ Log.getInstance().log(Level.FINEST, "Transverse end tags: {0}", this.getClass(),
 
             this.expectedEndTags.add(tag.getEndTag());
 
-Log.getInstance().log(Level.FINEST, "Expected end tags: {0}", this.getClass(), this.toSimpleString(expectedEndTags));
+            if(LOG.isLoggable(Level.FINEST)){
+                LOG.log(Level.FINEST, "Expected end tags: {0}", 
+                        this.toSimpleString(expectedEndTags));
+            }
         }
     }
     
@@ -378,16 +290,6 @@ Log.getInstance().log(Level.FINEST, "Expected end tags: {0}", this.getClass(), t
         }
     }
     
-    @Override
-    public boolean isStarted() {
-        return started;
-    }
-
-    @Override
-    public boolean isDone() {
-        return done;
-    }
-    
     public List<Tag> getTransverseEndTags() {
         return transverseEndTags;
     }
@@ -401,77 +303,7 @@ Log.getInstance().log(Level.FINEST, "Expected end tags: {0}", this.getClass(), t
         return visitedStartTags;
     }
     
-    @Override
-    public String [] getTextToReject() {
-        return this.textFilter == null ? null : this.textFilter.getTextToReject();
-    }
-    
-    @Override
-    public void setTextToReject(String [] textToReject) {
-        this.initTextFilter();
-        this.textFilter.setTextToReject(textToReject);
-    }
-
-    @Override
-    public String [] getTextToAccept() {
-        return this.textFilter == null ? null : this.textFilter.getTextToAccept();
-    }
-    
-    @Override
-    public void setTextToAccept(String [] textToAccept) {
-        this.initTextFilter();
-        this.textFilter.setTextToAccept(textToAccept);
-    }
-    
-    private void initTextFilter() {
-        if(this.textFilter == null) {
-            this.textFilter = new TextFilterImpl();
-            this.textFilter.setId(id);
-        }
-    }
-
-    @Override
-    public String [] getTextToDisableOn() {
-        return this.textToDisableOn;
-    }
-    
-    @Override
-    public void setTextToDisableOn(String [] disablingText) {
-        this.textToDisableOn = disablingText;
-    }
-    
-    @Override
-    public NodeFilter getStartAtFilter() {
-        return this.boundsVisitor == null ? null : this.boundsVisitor.getBoundsMarker().getStartAtFilter();
-    }
-
-    @Override
-    public void setStartAtFilter(NodeFilter startAtFilter) {
-        this.initBoundsVisitor().getBoundsMarker().setStartAtFilter(startAtFilter);
-    }
-
-    @Override
-    public NodeFilter getStopAtFilter() {
-        return this.boundsVisitor == null ? null : this.boundsVisitor.getBoundsMarker().getStopAtFilter();
-    }
-
-    @Override
-    public void setStopAtFilter(NodeFilter stopAtFilter) {
-        this.initBoundsVisitor().getBoundsMarker().setStartAtFilter(stopAtFilter);
-    }
-
-    private BoundsVisitor initBoundsVisitor() {
-        if(boundsVisitor == null) {
-            BoundsMarker marker = new BoundsMarker(id, null, null);
-            this.boundsVisitor = new BoundsVisitor(null, marker);
-            this.boundsVisitor.setId(id);
-            this.boundsVisitor.setStrict(true);
-        }
-        return boundsVisitor;
-    }
-
-    @Override
-    public String getId() {
+    public Object getId() {
         return id;
     }
 
@@ -481,88 +313,17 @@ Log.getInstance().log(Level.FINEST, "Expected end tags: {0}", this.getClass(), t
     }
 
     @Override
-    public void setTextFilter(TextFilter textFilter) {
-        this.textFilter = textFilter;
+    public NodeLocatingFilter<Node> getNodeLocator() {
+        return nodeLocator;
     }
 
-    @Override
-    public BoundsVisitor getBoundsVisitor() {
-        return boundsVisitor;
-    }
-
-    @Override
-    public void setBoundsVisitor(BoundsVisitor boundsVisitor) {
-        this.boundsVisitor = boundsVisitor;
-    }
-
-    @Override
-    public NodeFilter getTagFilter() {
-        return tagFilter;
-    }
-
-    @Override
-    public void setTagFilter(NodeFilter tagFilter) {
-        this.tagFilter = tagFilter;
-    }
-
-    @Override
-    public TagLocator getTagLocator() {
-        return tagLocator;
-    }
-
-    @Override
-    public void setTagLocator(TagLocator tagLocator) {
-        this.tagLocator = tagLocator;
-    }
-
-    @Override
-    public String[] getNodeTypesToAccept() {
-        return nodesFilter == null ? null : nodesFilter.getNodeTypesToAccept();
-    }
-
-    @Override
-    public void setNodeTypesToAccept(String[] nodeTypesToAccept) {
-        this.initNodesFilter().setNodeTypesToAccept(nodeTypesToAccept);
-    }
-
-    @Override
-    public String[] getNodeTypesToReject() {
-        return nodesFilter == null ? null : nodesFilter.getNodeTypesToReject();
-    }
-
-    @Override
-    public void setNodeTypesToReject(String[] nodeTypesToReject) {
-        this.initNodesFilter().setNodeTypesToReject(nodeTypesToReject);
-    }
-
-    @Override
-    public String[] getNodesToAccept() {
-        return nodesFilter == null ? null : nodesFilter.getNodesToAccept();
-    }
-
-    @Override
-    public void setNodesToAccept(String[] nodesToAccept) {
-        this.initNodesFilter().setNodesToAccept(nodesToAccept);
-    }
-
-    @Override
-    public String[] getNodesToReject() {
-        return nodesFilter == null ? null : nodesFilter.getNodesToReject();
-    }
-
-    @Override
-    public void setNodesToReject(String[] nodesToReject) {
-        this.initNodesFilter().setNodesToReject(nodesToReject);
+    public void setNodeLocator(NodeLocatingFilter<Node> nodeLocator) {
+        this.nodeLocator = nodeLocator;
     }
 
     @Override
     public NodesFilter getNodesFilter() {
         return nodesFilter;
-    }
-
-    @Override
-    public void setNodesFilter(NodesFilter nodesFilter) {
-        this.nodesFilter = nodesFilter;
     }
 }    
 /**

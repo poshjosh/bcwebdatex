@@ -19,19 +19,21 @@ import org.htmlparser.NodeFilter;
  */
 public interface TextFilter extends NodeFilter {
 
+    String [] EMPTY_ARRAY = new String[0];
+    
+    TextFilter ACCEPT_ALL = new TextFilter() {
+        @Override
+        public boolean accept(Node node) { return true; }
+        @Override
+        public String[] getTextToAccept() { return EMPTY_ARRAY; }
+        @Override
+        public String[] getTextToReject() { return EMPTY_ARRAY; }
+    };
+    
     @Override
     boolean accept(Node node);
-
-    String getId();
 
     String[] getTextToAccept();
 
     String[] getTextToReject();
-
-    void setId(String id);
-
-    void setTextToAccept(String[] textToAccept);
-
-    void setTextToReject(String[] textToReject);
-
 }

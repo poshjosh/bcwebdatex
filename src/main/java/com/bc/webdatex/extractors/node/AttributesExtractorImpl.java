@@ -25,13 +25,13 @@ public class AttributesExtractorImpl implements AttributesExtractor, Serializabl
 
     private static final Logger logger = Logger.getLogger(AttributesExtractorImpl.class.getName());
 
-    private final String id;
+    private final Object id;
 
     public AttributesExtractorImpl() {
         this(Long.toHexString(System.currentTimeMillis()));
     }
     
-    public AttributesExtractorImpl(String id) {
+    public AttributesExtractorImpl(Object id) {
         this.id = Objects.requireNonNull(id);
     }
 
@@ -69,7 +69,7 @@ public class AttributesExtractorImpl implements AttributesExtractor, Serializabl
         return extract;
     }
     
-    public final String getId() {
+    public final Object getId() {
         return id;
     }
 }

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.bc.webdatex.extractors.node;
+package com.bc.webdatex.util;
 
-import com.bc.util.Log;
 import com.bc.webdatex.extractors.Extractor;
-import com.bc.webdatex.util.NodeUtil;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.htmlparser.Node;
 import org.htmlparser.NodeFilter;
 import org.htmlparser.beans.StringExtractingNodeVisitor;
@@ -30,6 +30,8 @@ import org.htmlparser.util.ParserException;
  * @author Chinomso Bassey Ikwuagwu on Nov 5, 2016 3:56:56 PM
  */
 public class NodeSelector implements Extractor<List<Node>, Node> {
+
+    private transient static final Logger LOG = Logger.getLogger(NodeSelector.class.getName());
     
     private final int maxDepth;
     
@@ -58,7 +60,7 @@ public class NodeSelector implements Extractor<List<Node>, Node> {
         try{
             return this.select(nodes, outputIfNone);
         }catch(ParserException e) {
-            Log.getInstance().log(Level.WARNING, "", this.getClass(), e);
+            LOG.log(Level.WARNING, null, e);
             return outputIfNone;
         }
     }
@@ -72,12 +74,12 @@ public class NodeSelector implements Extractor<List<Node>, Node> {
 
     private Node doSelect(List<Node> nodes, Node outputIfNone) throws ParserException {
         
+        Objects.requireNonNull(nodes);
+        
         Node ret = outputIfNone;
         int retLen = minSize;
         
         final StringExtractingNodeVisitor nodeVisitor = new StringExtractingNodeVisitor(bufferSize, bufferSize);
-        
-        final Log logger = Log.getInstance();
         
         for(Node node : nodes) {
             
@@ -103,8 +105,10 @@ public class NodeSelector implements Extractor<List<Node>, Node> {
                 
                 final Level level = len > retLen ? Level.FINER : Level.FINEST;
                 
-                logger.log(level, "Text length. current: {0} > previous: {1}, node: {2}, text: {3} ", 
-                        NodeUtil.class, len, retLen, node, text); 
+                if(LOG.isLoggable(level)) {
+                    LOG.log(level, "Text length. current: {0} > previous: {1}, node: {2}, text: {3} ", 
+                            new Object[]{len, retLen, node, text}); 
+                }
                 
                 if(len > retLen) {
                     
@@ -114,7 +118,9 @@ public class NodeSelector implements Extractor<List<Node>, Node> {
             }
         }
 
-        logger.log(Level.FINER, "Text length: {0}, node: {1}", NodeUtil.class, retLen, ret); 
+        if(LOG.isLoggable(Level.FINER)) {
+            LOG.log(Level.FINER, "Text length: {0}, node: {1}", new Object[]{retLen, ret}); 
+        }
         
         if(ret != outputIfNone && this.depth < maxDepth) {
 
@@ -122,7 +128,7 @@ public class NodeSelector implements Extractor<List<Node>, Node> {
             
             if(children != null && !children.isEmpty()) {
                 
-                logger.log(Level.FINER, "Recursing {0} children", NodeUtil.class, children.size()); 
+                LOG.log(Level.FINER, "Recursing {0} children", children.size()); 
             
                 ++this.depth;
                 

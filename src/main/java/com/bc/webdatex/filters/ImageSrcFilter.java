@@ -16,6 +16,8 @@
 
 package com.bc.webdatex.filters;
 
+import com.bc.net.util.UrlProbe;
+import com.bc.net.util.UrlProbeImpl;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
@@ -35,6 +37,8 @@ public class ImageSrcFilter implements Filter<String> {
     
     private final String baseUrl;
 
+    private final UrlProbe urlProbe;
+
     public ImageSrcFilter(String baseUrl) {
     
         this(baseUrl, null, null);
@@ -47,6 +51,8 @@ public class ImageSrcFilter implements Filter<String> {
         this.toAccept = getPattern(regexToAccept);
         
         this.toReject = getPattern(regexToReject);
+        
+        this.urlProbe = new UrlProbeImpl();
     }
     
     private Pattern getPattern(String regex) {
@@ -79,29 +85,11 @@ public class ImageSrcFilter implements Filter<String> {
             return false;
         }
         
-        if(this.rejectCouldfrontHostedImages(level, imageSrc)) {
-            return false;
-        }
-        
-        return this.isValid(imageSrc);
+        return true;
     }
 
     protected boolean rejectNullOrEmpty(String imageUrl) {
         return imageUrl == null || imageUrl.isEmpty();
-    }
-
-    protected boolean rejectCouldfrontHostedImages(Level level, String imageUrl) {
-
-        final String unwanted = ".cloudfront.net/";
-//@todo unwanted formats. Make this a property                
-// https://d5nxst8fruw4z.cloudfront.net/atrk.gif?account=rrH8k1a0CM00UH                
-        int n = imageUrl.indexOf(unwanted);
-        
-        boolean rejected = n != -1;
-        if(rejected) {
-            logger.log(level, "Accepted: false. Reason: imageUrl contains: {0}", unwanted);
-        }        
-        return rejected;
     }
 
     public boolean isValid(String imageUrl) {
@@ -118,11 +106,11 @@ public class ImageSrcFilter implements Filter<String> {
         return accepted;
     }
 
-//    private boolean acceptExistingUrls(String imageUrl) {
-//        try{
-//            return ConnectionManager.exists(imageUrl);
-//        }catch(Exception e) {
-//            return false;
-//        }    
-//    }
+    public boolean isExisting(URL imageUrl) {
+        try{
+            return this.urlProbe.exists(imageUrl);
+        }catch(Exception e) {
+            return false;
+        }    
+    }
 }

@@ -1,24 +1,21 @@
 package com.bc.webdatex;
 
 import com.bc.json.config.JsonConfig;
-import com.bc.webdatex.config.Config;
-import com.bc.webdatex.context.ScrapperContextFactory;
-import com.bc.webdatex.context.CapturerContext;
+import com.bc.nodelocator.ConfigName;
+import com.bc.webdatex.context.CapturerContextFactoryImpl;
 import com.bc.webdatex.filters.DefaultUrlFilter;
-import com.bc.webdatex.formatters.DefaultFormatter;
-import com.bc.webdatex.formatters.MyDateFormat;
 import java.io.IOException;
 import java.net.URI;
-import java.text.DateFormat;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.json.simple.parser.ParseException;
+import com.bc.webdatex.context.CapturerContextFactory;
 
 /**
  * @(#)Tools.java   27-Oct-2014 12:21:27
@@ -35,11 +32,10 @@ import java.util.regex.Pattern;
 public class Tools {
     
     static final URI configsDir = null;
-    static final Properties ftpProperties = null;
-    static final ScrapperContextFactory factory;
+    static final CapturerContextFactory factory;
     static {
-        factory = new ScrapperContextFactory(
-                configsDir, ftpProperties
+        factory = new CapturerContextFactoryImpl(
+                Paths.get(configsDir).toFile()
         );
     }
     
@@ -125,41 +121,15 @@ System.out.println(cal.getTime());
 System.out.println("YES");
             }
             
-
-if(true) {
-    return;
-}            
-            
-            Tools tools = new Tools();
-        
-            tools.run2();
-            
         }catch(Exception e) {
             
             e.printStackTrace();
         }
     }
     
-    public void run2() throws java.text.ParseException {
+    public void run1() throws IOException, ParseException {
 
-        CapturerContext context = factory.getContext("kiramu");
-        
-        DefaultFormatter fmt = new DefaultFormatter(context);
-        
-        DateFormat dfmt = fmt.getInputDateformat();
-        
-        String [] arr = ((MyDateFormat)dfmt).getAcceptedPatterns();
-        
-System.out.println(Arrays.toString(arr));        
-        
-        final String s = "06 26 2015 13:16:56.143";
-        
-System.out.println(dfmt.parse(s));
-    }
-    
-    public void run1() throws IOException {
-
-        Set<String> sitenames = factory.getConfigNames();
+        final List<String> sitenames = factory.getConfigService().getConfigNames();
         
         List<String> forUpdate = new ArrayList<String>();
         
@@ -180,9 +150,9 @@ System.out.println(dfmt.parse(s));
             }
             
 System.out.println(sitename);            
-            JsonConfig config = factory.getConfig(sitename);
+            JsonConfig config = factory.getConfigService().getConfig(sitename, null);
             
-            List values = config.getList(Config.Formatter.datePatterns);
+            List values = config.getList(ConfigName.datePatterns);
 
 System.out.println("Date patterns: "+values);                    
 
@@ -190,7 +160,7 @@ System.out.println("Date patterns: "+values);
                 continue;
             }
             
-            List defaults = config.getDefaults().getList(Config.Formatter.datePatterns);
+            List defaults = config.getDefaults().getList(ConfigName.datePatterns);
 
 System.out.println("Default dates: "+defaults);                    
 
@@ -202,9 +172,42 @@ System.out.println("YES!!!");
         }
         
 System.out.println();        
-        this.set(forUpdate, Config.Formatter.datePatterns, null, true);
+        this.set(forUpdate, ConfigName.datePatterns, null, true);
     }
     
+    /**
+     * If val is null, method #remove is called rather than #set
+     */
+    public void set(List<String> names, Object key, Object val, boolean sync) 
+            throws IOException {
+        
+        for(String name:names) {
+
+            try{
+                
+                JsonConfig config = factory.getConfigService().getConfig(name, null);
+                
+                if(val == null) {
+                    config.remove(key);
+                }else{
+                    config.setObject(key, val);
+                }
+
+System.out.println("Updating: "+name+"."+key+" = "+val);
+                factory.getConfigService().save(config);
+
+//System.out.println("Syncing: "+name);
+//                factory.sync(config);
+                
+            }catch(IOException | org.json.simple.parser.ParseException e) {
+
+System.out.println(name+". "+e);                
+            }
+        }
+    }
+}
+/**
+ * 
     private void run0() throws IOException {
 
         List<String> minData = Arrays.asList(new String[]{"default"});
@@ -220,34 +223,5 @@ System.out.println();
         this.set(explicit, Config.Extractor.hasExplicitLinks, true, true);
     }
 
-    /**
-     * If val is null, method #remove is called rather than #set
-     */
-    public void set(List<String> names, Object key, Object val, boolean sync) 
-            throws IOException {
-        
-        for(String name:names) {
-
-            try{
-                
-                JsonConfig config = factory.getConfig(name);
-                
-                if(val == null) {
-                    config.remove(key);
-                }else{
-                    config.setObject(key, val);
-                }
-
-System.out.println("Updating: "+name+"."+key+" = "+val);
-                factory.saveValues(config);
-
-System.out.println("Syncing: "+name);
-                factory.sync(config);
-                
-            }catch(IOException | org.json.simple.parser.ParseException e) {
-
-System.out.println(name+". "+e);                
-            }
-        }
-    }
-}
+ * 
+ */

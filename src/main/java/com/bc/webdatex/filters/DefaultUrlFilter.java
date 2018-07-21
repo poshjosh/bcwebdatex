@@ -1,7 +1,6 @@
 package com.bc.webdatex.filters;
 
-import com.bc.util.Log;
-import com.bc.webdatex.filters.Filter;
+import java.util.logging.Logger;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Calendar;
@@ -14,6 +13,7 @@ import java.util.regex.Pattern;
 public class DefaultUrlFilter
   implements Filter<String>
 {
+    private transient static final Logger LOG = Logger.getLogger(DefaultUrlFilter.class.getName());
   private String id;
   private Pattern requiredPattern;
   private Pattern unwantedPattern;
@@ -45,7 +45,9 @@ public class DefaultUrlFilter
       calendar.add(5, amount);
     }
     
-    Log.getInstance().log(Level.FINER, "URL: {0}, dates: {1}", getClass(), url, output);
+    if(LOG.isLoggable(Level.FINER)){
+      LOG.log(Level.FINER, "URL: {0}, output: {1}", new Object[]{ url,  output});
+    }
     
     return output;
   }
@@ -105,7 +107,10 @@ public class DefaultUrlFilter
 //        }
         
         boolean found = this.unwantedPattern.matcher(url).find();
-        Log.getInstance().log(Level.FINER, "{0}, Accepted: {1}, URL: {2}, unwanted regex: {3}", getClass(), this.id, Boolean.valueOf(!found), url, this.unwantedPattern.pattern());
+        if(LOG.isLoggable(Level.FINER)){
+            LOG.log(Level.FINER, "{0}, not found: {1}, URL: {2},  unwanted regex: {3}",  
+                    new Object[]{ this.id,  Boolean.valueOf(!found),  url,  this.unwantedPattern.pattern()});
+        }
         
         if (found) {
           output = false;
@@ -116,7 +121,10 @@ public class DefaultUrlFilter
       if ((this.unwanted != null) && (this.unwanted.length > 0)) {
         for (String s : this.unwanted) {
           contains = url.contains(s);
-          Log.getInstance().log(Level.FINER, "{0}, Accepted: {1}, URL: {2}, unwanted text: {3}", getClass(), this.id, Boolean.valueOf(!contains), url, s);
+          if(LOG.isLoggable(Level.FINER)){
+               LOG.log(Level.FINER, "{0}, not containing: {1}, URL: {2},  unwanted text: {3}",  
+                       new Object[]{ this.id,  Boolean.valueOf(!contains),  url,  s});
+          }
           
           if (contains) {
             output = false;
@@ -129,7 +137,9 @@ public class DefaultUrlFilter
       {
 //        Set<String> set = getDateStrings(this.requiredPattern.pattern(), url);
         
-//        Log.getInstance().log(Level.FINER, "URL: {0}, dates: {1}", getClass(), url, set);
+//        if(LOG.isLoggable(Level.FINER)){
+//            LOG.log(Level.FINER, "URL: {0},new Object[]{ getClass(),  url,  set});
+//        }
         
 //        if ((!set.isEmpty()) && (!contains(url, set))) {
 //          output = false;
@@ -138,7 +148,10 @@ public class DefaultUrlFilter
         
         output = this.requiredPattern.matcher(url).find();
         
-        Log.getInstance().log(Level.FINER, "{0}, Accepted: {1}, URL: {2}, required regex: {3}", getClass(), this.id, Boolean.valueOf(output), url, this.requiredPattern.pattern());
+        if(LOG.isLoggable(Level.FINER)){
+            LOG.log(Level.FINER, "{0}, output: {1}, URL: {2},  required regex: {3}",  
+                    new Object[]{ this.id,  Boolean.valueOf(output),  url,  this.requiredPattern.pattern()});
+        }
 
         if (output) { 
           return true;
@@ -153,7 +166,10 @@ public class DefaultUrlFilter
         
         for (String s : this.required) {
           output = url.contains(s);
-          Log.getInstance().log(Level.FINER, "{0}, Accepted: {1}, URL: {2}, required text: {3}", getClass(), this.id, Boolean.valueOf(output), url, s);
+          if(LOG.isLoggable(Level.FINER)){
+               LOG.log(Level.FINER, "{0}, output: {1}, URL: {2},  required text: {3}",  
+                     new Object[]{ this.id,  Boolean.valueOf(output),  url,  s});
+          }
           
           if (output) { 
             return true;
@@ -165,7 +181,10 @@ public class DefaultUrlFilter
     }
     finally
     {
-      Log.getInstance().log(Level.FINER, "Accepted: {0}, URL: {1}", getClass(), Boolean.valueOf(output), url);
+      if(LOG.isLoggable(Level.FINER)){
+         LOG.log(Level.FINER, "Accepted: {0}, url: {1}", 
+                 new Object[]{ Boolean.valueOf(output),  url});
+      }
     }
   }
   

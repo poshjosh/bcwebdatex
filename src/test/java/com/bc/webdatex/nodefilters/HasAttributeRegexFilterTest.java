@@ -20,7 +20,6 @@ import org.htmlparser.filters.HasAttributeRegexFilter;
 import com.bc.webdatex.TestBase;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 import org.htmlparser.Node;
 import org.htmlparser.Tag;
@@ -35,9 +34,7 @@ import org.junit.Test;
  */
 public class HasAttributeRegexFilterTest extends TestBase{
     
-    public HasAttributeRegexFilterTest() {
-        super(Level.FINE);
-    }
+    public HasAttributeRegexFilterTest() { }
 
     /**
      * Test of accept method, of class HasAttributeRegexFilter.

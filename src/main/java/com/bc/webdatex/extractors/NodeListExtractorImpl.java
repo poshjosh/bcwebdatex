@@ -1,17 +1,19 @@
 package com.bc.webdatex.extractors;
 
-import com.bc.util.Log;
+import java.io.Serializable;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import org.htmlparser.Remark;
-import org.htmlparser.Tag;
-import org.htmlparser.Text;
+import java.util.logging.Logger;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
-import org.htmlparser.visitors.AbstractNodeVisitor;
+import org.htmlparser.visitors.NodeVisitorImpl;
 
-public class NodeListExtractorImpl extends AbstractNodeVisitor implements NodeListExtractor {
+public class NodeListExtractorImpl extends NodeVisitorImpl 
+        implements NodeListExtractor, Serializable {
+
+  private transient static final Logger LOG = Logger.getLogger(NodeListExtractorImpl.class.getName());
     
   private boolean started;
   private boolean stopInitiated;
@@ -21,10 +23,14 @@ public class NodeListExtractorImpl extends AbstractNodeVisitor implements NodeLi
   private Map extractedData;
   
   public NodeListExtractorImpl() {
+    this(null);
+  }
+
+  public NodeListExtractorImpl(NodeList source) {
+    this.source = source;
     this.extractedData = new HashMap();
   }
   
-  @Override
   public void reset()
   {
     this.started = false;
@@ -32,15 +38,13 @@ public class NodeListExtractorImpl extends AbstractNodeVisitor implements NodeLi
     this.stopped = false;
     this.source = null;
     
-
     this.extractedData = new HashMap();
   }
   
+  @Override
   public Map extractData(NodeList nodeList) throws ParserException
   {
-    Log.getInstance().log(Level.FINE, "{0} process: {1}", getClass(), this.started ? "Resuming" : "Starting", this);
-    
-
+    LOG.fine(() -> MessageFormat.format("{0} process: {1}", this.started ? "Resuming" : "Starting", this));
 
     this.started = true;
     this.startTime = System.currentTimeMillis();
@@ -57,117 +61,70 @@ public class NodeListExtractorImpl extends AbstractNodeVisitor implements NodeLi
     {
       this.stopped = true;
       
-      Log.getInstance().log(Level.FINE, "{0} process: {1}", getClass(), this.stopInitiated ? "Pausing" : "Completed", this);
+      LOG.fine(() -> MessageFormat.format("{0} process: {1}", 
+              this.stopInitiated ? "Pausing" : "Completed", this));
     }
     
-
-
     return this.extractedData;
   }
   
   @Override
-  public Object call() {
+  public Map call() {
     this.run();
     return this.extractedData;
   }
   
 
   @Override
-  public void run()
-  {
-    try
-    {
+  public void run(){
+    try{
       extractData(this.source);
     } catch (ParserException|RuntimeException e) {
-      Log.getInstance().log(Level.WARNING, null, getClass(), e);
+      LOG.log(Level.WARNING, null, e);
     }
   }
 
   @Override
   public long getStartTime() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    return this.startTime;
   }
   
-  public boolean isStopRequested()
-  {
+  @Override
+  public boolean isStopRequested(){
     return this.stopInitiated;
   }
   
-  public boolean isStopped()
-  {
+  @Override
+  public boolean isStopped(){
     return this.stopped;
   }
   
-  public void stop()
-  {
+  @Override
+  public void stop() {
     this.stopInitiated = true;
   }
   
-  public boolean isCompleted()
-  {
+  @Override
+  public boolean isCompleted() {
     return (this.started) && (this.stopped) && (!this.stopInitiated);
   }
   
-  public boolean isStarted()
-  {
+  @Override
+  public boolean isStarted() {
     return this.started;
-  }
-  
-
-
-  public void visitEndTag(Tag tag)
-  {
-    if (this.stopInitiated) {
-      return;
-    }
-    super.visitEndTag(tag);
-  }
-  
-  public void visitRemarkNode(Remark remark)
-  {
-    if (this.stopInitiated) {
-      return;
-    }
-    super.visitRemarkNode(remark);
-  }
-  
-  public void visitStringNode(Text string)
-  {
-    if (this.stopInitiated) {
-      return;
-    }
-    super.visitStringNode(string);
-  }
-  
-  public void visitTag(Tag tag)
-  {
-    if (this.stopInitiated) {
-      return;
-    }
-    super.visitTag(tag);
   }
   
   protected Map getExtractedData() {
     return this.extractedData;
   }
   
-  public NodeList getSource()
-  {
-    return this.source;
+  @Override
+  public String getTaskName() {
+    return this.getClass().getName();
   }
   
-  public void setSource(NodeList source)
-  {
-    this.source = source;
-  }
-  
-  public String getTaskName()
-  {
-    return NodeListExtractorImpl.class.getName();
-  }
-  
-  public String toString()
-  {
+  @Override
+  public String toString() {
     StringBuilder builder = new StringBuilder(getTaskName());
     builder.append(", started: ").append(this.started);
     builder.append(", stopInitiated: ").append(this.stopInitiated);

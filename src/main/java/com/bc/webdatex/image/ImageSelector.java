@@ -17,7 +17,7 @@
 package com.bc.webdatex.image;
 
 import com.bc.imageutil.ImageInfo;
-import com.bc.util.Log;
+import java.util.logging.Logger;
 import com.bc.webdatex.filters.ImageFilter;
 import java.util.Set;
 import java.util.logging.Level;
@@ -26,6 +26,7 @@ import java.util.logging.Level;
  * @author Chinomso Bassey Ikwuagwu on Nov 3, 2016 7:29:21 PM
  */
 public class ImageSelector extends ImageFilter {
+    private transient static final Logger LOG = Logger.getLogger(ImageSelector.class.getName());
 
     public ImageSelector() {
         super(null);
@@ -59,9 +60,11 @@ final long mb4 = com.bc.util.Util.availableMemory();
                 }
             }
         }
-Log.getInstance().log(Level.FINER, 
+if(LOG.isLoggable(Level.FINER)){
+LOG.log(Level.FINER, 
     "getFirstValidImageUrl. Consumed. time: {0}, memory: {1}",
-    this.getClass(), System.currentTimeMillis()-tb4, com.bc.util.Util.usedMemory(mb4));
+new Object[]{ System.currentTimeMillis()-tb4,  com.bc.util.Util.usedMemory(mb4)});
+}
         return firstValidImageUrl;
     }
 
@@ -82,9 +85,11 @@ final long mb4 = com.bc.util.Util.availableMemory();
                 }
             }
         }
-Log.getInstance().log(Level.FINER, 
+if(LOG.isLoggable(Level.FINER)){
+LOG.log(Level.FINER, 
     "getImageUrlOfLargestImage. Consumed. time: {0}, memory: {1}",
-    this.getClass(), System.currentTimeMillis()-tb4, com.bc.util.Util.usedMemory(mb4));
+new Object[]{ System.currentTimeMillis()-tb4,  com.bc.util.Util.usedMemory(mb4)});
+}
         return imageUrlOfLargestImage;
     }
 }

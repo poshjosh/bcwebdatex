@@ -14,6 +14,7 @@ import org.htmlparser.Tag;
  * @version  0.3
  * @since    0.0
  */
+@FunctionalInterface
 public interface AttributesExtractor {
     
     String[] extract(Tag tag, String... attributes);

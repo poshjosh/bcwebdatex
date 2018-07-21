@@ -16,7 +16,7 @@
 
 package com.bc.webdatex.util;
 
-import com.bc.util.Log;
+import java.util.logging.Logger;
 import java.util.logging.Level;
 import org.htmlparser.Node;
 import org.htmlparser.NodeFilter;
@@ -27,115 +27,22 @@ import org.htmlparser.util.NodeList;
  */
 public class NodeUtil {
 
-    /**
-     * Clone methods provided for Nodes in the htmlparser library
-     * Clones only a Node's attributes, page, start and end position.
-     * This also clones all the Node's parent and children. 
-     * @param node The node to clone
-     * @return The clone 
-     * @throws CloneNotSupportedException 
-     */
-    public static Node deepClone(Node node) throws CloneNotSupportedException {
-        
-        return deepClone(node, true, true);
-    }
-
-    /**
-     * Clone method provided for Nodes in the htmlparser library
-     * clones only a Node's attributes, page, start and end position.
-     * However, this method also clones all the Node's parent, if parameter 
-     * parents is <tt>true</tt> and all the Node's children if parameter children
-     * is <tt>true</tt>
-     * @param node The node to clone
-     * @param parents If <tt>true</tt> all the Node's parents will be cloned
-     * @param children If <tt>true</tt> all the Node's parents will be cloned
-     * @return The clone
-     * @throws CloneNotSupportedException 
-     */
-    public static Node deepClone(Node node, boolean parents, 
-            boolean children) throws CloneNotSupportedException {
-        
-        Node clone = (Node)node.clone();
-            
-        if(parents) {
-
-            Node nodeParent = node.getParent();
-
-            Node cloneParent;
-
-            if(nodeParent == null) {
-                cloneParent = null;                  
-            }else{    
-                cloneParent = deepClone(nodeParent, true, false);
-            }
-
-            clone.setParent(cloneParent);
-            
-            if(nodeParent != null) {
-                
-                NodeList nodeSiblings = nodeParent.getChildren();
-
-                NodeList cloneSiblings = new NodeList();
-
-                for(Node nodeSibling:nodeSiblings) {
-
-                    Node cloneSibling;
-                    
-                    if(nodeSibling.equals(node)) {
-                        cloneSibling = clone;
-                    }else{
-                        cloneSibling = deepClone(nodeSibling, false, true);
-                    }    
-
-                    cloneSiblings.add(cloneSibling);
-                }
-
-                if(cloneParent != null) {
-                    cloneParent.setChildren(cloneSiblings);
-                }
-            }
-        }
-
-        if(children) {
-
-            NodeList nodeChildren = node.getChildren();
-
-            NodeList cloneChildren;
-            
-            if(nodeChildren == null) {
-                
-                cloneChildren = null;
-                
-            }else{
-
-                cloneChildren = new NodeList();
-
-                for(Node child:nodeChildren) {
-
-                    Node childClone = deepClone(child, false, true);
-
-                    childClone.setParent(clone);
-
-                    cloneChildren.add(childClone);
-                }
-            }
-            
-            clone.setChildren(cloneChildren);
-        }
-        
-        return clone;
-    }
+    private transient static final Logger LOG = Logger.getLogger(NodeUtil.class.getName());
     
     public static void insertBefore(Node node, Node toInsert, NodeFilter filter) {
 
         if(filter != null && filter.accept(node)) {
-Log.getInstance().log(Level.FINER, "Accepted: {0}", NodeUtil.class, node);
+if(LOG.isLoggable(Level.FINER)){
+LOG.log(Level.FINER, "Accepted: {0}", node);
+}
         
             insertBefore(node, toInsert);
             
         }else{
             
-Log.getInstance().log(Level.FINER, "Rejected: {0}", NodeUtil.class, node);
+if(LOG.isLoggable(Level.FINER)){
+LOG.log(Level.FINER, "Rejected: {0}", node);
+}
         }
         
         NodeList children = node.getChildren();
@@ -155,7 +62,7 @@ Log.getInstance().log(Level.FINER, "Rejected: {0}", NodeUtil.class, node);
         if(parent != null) {
             NodeList siblings = parent.getChildren();
             final int tgtIndex = siblings.indexOf(node);
-            NodeList update = new NodeList();
+            NodeList update = new org.htmlparser.util.NodeListImpl();
             for(int i=0; i<siblings.size(); i++) {
                 if(i == tgtIndex) {
                     update.add(toInsert);

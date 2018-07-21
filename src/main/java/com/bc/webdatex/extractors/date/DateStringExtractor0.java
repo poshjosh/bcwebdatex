@@ -16,16 +16,18 @@
 
 package com.bc.webdatex.extractors.date;
 
-import com.bc.util.Log;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.bc.webdatex.extractors.TextParser;
+import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 4, 2016 8:35:55 PM
  */
 public class DateStringExtractor0 implements TextParser<String> {
+
+    private transient static final Logger LOG = Logger.getLogger(DateStringExtractor0.class.getName());
 
     private final Pattern isoDatePattern;
     private final Pattern digitDatePattern;
@@ -108,9 +110,7 @@ public class DateStringExtractor0 implements TextParser<String> {
             output = matcher.group();
 //System.out.println("------------------ Digit date group: "+output);                        
         }else {
-Log.getInstance().log(Level.FINER, 
-"Could not find date pattern in: {0}", 
-this.getClass(), dateString);
+            LOG.log(Level.FINER, "Could not find date pattern in: {0}", dateString);
             output = outputIfNone;
         }
         
@@ -157,9 +157,7 @@ this.getClass(), dateString);
                 }
                 output = dateCharsBuilder.toString();
             }else{
-Log.getInstance().log(Level.FINER, 
-    "Could not find date pattern in: {0}", 
-    this.getClass(), dateString);
+                LOG.log(Level.FINER, "Could not find date pattern in: {0}", dateString);
                 output = outputIfNone;
             }
         }

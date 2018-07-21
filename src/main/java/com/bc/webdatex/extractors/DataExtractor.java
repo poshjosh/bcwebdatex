@@ -4,5 +4,5 @@ import java.util.Map;
 
 public interface DataExtractor<E> {
     
-  Map extractData(E paramE) throws Exception;
+  Map extractData(E source) throws Exception;
 }

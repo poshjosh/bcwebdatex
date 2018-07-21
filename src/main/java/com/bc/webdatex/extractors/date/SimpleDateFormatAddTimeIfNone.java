@@ -15,7 +15,6 @@
  */
 package com.bc.webdatex.extractors.date;
 
-import com.bc.util.Log;
 import com.bc.webdatex.filters.AcceptDateHasTime;
 import com.bc.webdatex.filters.Filter;
 import java.text.DateFormatSymbols;
@@ -25,11 +24,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 14, 2016 2:42:21 PM
  */
 public class SimpleDateFormatAddTimeIfNone extends SimpleDateFormat {
+
+    private transient static final Logger LOG = Logger.getLogger(SimpleDateFormatAddTimeIfNone.class.getName());
 
     private final Filter<Date> acceptDateHasTime = new AcceptDateHasTime();
     
@@ -70,8 +72,10 @@ public class SimpleDateFormatAddTimeIfNone extends SimpleDateFormat {
             
             Date update = this.mCalendar.getTime();
             
-Log.getInstance().log(Level.FINE, "Added time: {0}:{1}. From: {2} to {3}", 
-        this.getClass(), HOURS, MINUTES, date, update);
+            if(LOG.isLoggable(Level.FINE)) {
+                LOG.log(Level.FINE, "Added time: {0}:{1}. From: {2} to {3}", 
+                    new Object[]{HOURS, MINUTES, date, update});
+            }
 
             date = update;
         }

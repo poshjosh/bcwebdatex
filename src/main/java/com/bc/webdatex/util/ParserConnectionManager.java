@@ -1,6 +1,6 @@
 package com.bc.webdatex.util;
 
-import com.bc.util.Log;
+import java.util.logging.Logger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -23,14 +23,18 @@ import org.htmlparser.util.ParserException;
  */
 public class ParserConnectionManager extends org.htmlparser.http.ConnectionManager {
 
+    private transient static final Logger LOG = Logger.getLogger(ParserConnectionManager.class.getName());
+
     @Override
     public URLConnection openConnection(URL url) throws ParserException {
         
         try{
             
-            URL modified = new URL(null, url.toExternalForm(), new com.bc.net.HttpStreamHandlerForBadStatusLine());
+            URL modified = new URL(null, url.toExternalForm(), new com.bc.net.util.HttpStreamHandlerForBadStatusLine());
             
-Log.getInstance().log(Level.FINER, "Input: {0}\nOutput: {1}", this.getClass(), url, modified);
+            if(LOG.isLoggable(Level.FINER)){
+                LOG.log(Level.FINER, "Input: {0}\nOutput: {1}",new Object[]{ url,  modified});
+            }
 
             return super.openConnection(modified);
             

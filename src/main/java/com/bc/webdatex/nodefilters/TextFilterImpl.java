@@ -1,8 +1,9 @@
 package com.bc.webdatex.nodefilters;
 
 import com.bc.util.StringArrayUtils;
-import com.bc.util.Log;
+import java.util.logging.Logger;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.logging.Level;
 import org.htmlparser.Node;
 import org.htmlparser.Remark;
@@ -23,12 +24,20 @@ import org.htmlparser.Text;
  * @since    2.0
  */
 public class TextFilterImpl implements TextFilter {
+    
+    private transient static final Logger LOG = Logger.getLogger(TextFilterImpl.class.getName());
 
-    private String id;
+    private final Object id;
     
-    private String [] textToReject;
+    private final String [] textToAccept;
+
+    private final String [] textToReject;
     
-    private String [] textToAccept;
+    public TextFilterImpl(Object id, String[] textToAccept, String[] textToReject) {
+        this.id = Objects.requireNonNull(id);
+        this.textToAccept = textToAccept;
+        this.textToReject = textToReject;
+    }
             
     @Override
     public boolean accept(Node node) {
@@ -43,23 +52,27 @@ public class TextFilterImpl implements TextFilter {
             text = null;
         }
         
-        boolean output;
+        final boolean output;
 
-        boolean reject = false;
+        final boolean reject;
         boolean accept = true;
 
         if(text != null && !text.trim().isEmpty()) {
             
             output = !(reject = this.isReject(text)) && (accept = this.isAccept(text));
             
-//if("targetNode5".equals(id)) System.out.println("- - - - - - - - - - Reject: "+reject+", accept: "+accept);
+            if(LOG.isLoggable(Level.FINER)) {
+                LOG.log(Level.FINER, "Reject: {0}, accept: {1}", new Object[]{reject, accept});
+            }
     
         }else{
             
             output = false;
         }
         
-Log.getInstance().log(Level.FINER, "Accept: {0}, Text: {1}", this.getClass(), output, text);                
+        if(LOG.isLoggable(Level.FINER)){
+            LOG.log(Level.FINER, "Accept: {0}, text: {1}", new Object[]{output,  text});
+        }                
 
         return output;
     } 
@@ -76,14 +89,8 @@ Log.getInstance().log(Level.FINER, "Accept: {0}, Text: {1}", this.getClass(), ou
         return accept;
     }
     
-    @Override
-    public String getId() {
+    public Object getId() {
         return id;
-    }
-
-    @Override
-    public void setId(String id) {
-        this.id = id;
     }
 
     @Override
@@ -92,20 +99,10 @@ Log.getInstance().log(Level.FINER, "Accept: {0}, Text: {1}", this.getClass(), ou
     }
 
     @Override
-    public void setTextToReject(String[] textToReject) {
-        this.textToReject = textToReject;
-    }
-
-    @Override
     public String[] getTextToAccept() {
         return textToAccept;
     }
 
-    @Override
-    public void setTextToAccept(String[] textToAccept) {
-        this.textToAccept = textToAccept;
-    }
-    
     @Override
     public String toString() {
         return id + "-"+this.getClass().getSimpleName() +

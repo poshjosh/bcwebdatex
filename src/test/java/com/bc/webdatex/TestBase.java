@@ -16,22 +16,21 @@
 
 package com.bc.webdatex;
 
-import com.bc.util.Log;
+import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 22, 2016 9:24:33 PM
  */
 public class TestBase {
+    
+    private transient static final Logger LOG = Logger.getLogger(TestBase.class.getName());
 
     public TestBase() { 
         this(Level.FINE);
     }
     
-    public TestBase(Level logLevel) { 
-        final Log xlog = Log.getInstance();
-        xlog.setLogLevel("", logLevel);
-    }
+    public TestBase(Level logLevel) { }
     
     public String getUrl(String site) {
         String [] urls;

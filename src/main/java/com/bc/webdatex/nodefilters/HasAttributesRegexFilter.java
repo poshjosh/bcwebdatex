@@ -1,6 +1,6 @@
-package com.bc.webdatex.filters;
+package com.bc.webdatex.nodefilters;
 
-import com.bc.util.Log;
+import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import org.htmlparser.Attribute;
@@ -11,6 +11,7 @@ import org.htmlparser.filters.HasAttributeFilter;
 public class HasAttributesRegexFilter
   extends HasAttributeFilter
 {
+    private transient static final Logger LOG = Logger.getLogger(HasAttributesRegexFilter.class.getName());
   private Pattern pattern;
   
   public HasAttributesRegexFilter(String attribute, String regex)
@@ -35,7 +36,10 @@ public class HasAttributesRegexFilter
     }
     
 
-    Log.getInstance().log(Level.FINEST, "{0}={1}, Accept: {2}, Node: {3}", getClass(), this.mAttribute, this.pattern.pattern(), Boolean.valueOf(accept), node);
+    if(LOG.isLoggable(Level.FINEST)){
+      LOG.log(Level.FINEST, "{0}={1}, accept: {2}, Node: {3}",  
+              new Object[]{this.mAttribute,  this.pattern.pattern(),  Boolean.valueOf(accept),  node});
+    }
     
     return accept;
   }

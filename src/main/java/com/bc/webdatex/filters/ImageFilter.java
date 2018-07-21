@@ -17,13 +17,14 @@
 package com.bc.webdatex.filters;
 
 import com.bc.imageutil.ImageInfo;
-import com.bc.net.ConnectionManager;
+import com.bc.net.impl.RequestBuilderImpl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.bc.net.RequestBuilder;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Nov 3, 2016 7:10:22 PM
@@ -34,7 +35,7 @@ public class ImageFilter extends ImageSrcFilter {
     
     private final ImageInfo imageInfo;
     
-    private final ConnectionManager connMgr;
+    private final RequestBuilder connMgr;
 
     public ImageFilter(String baseUrl) {
         this(baseUrl, null, null);
@@ -53,12 +54,11 @@ public class ImageFilter extends ImageSrcFilter {
             int connectTimeout, int readTimeout) {
         super(baseUrl, regexToAccept, regexToReject);
         this.imageInfo = new ImageInfo();
-        this.connMgr = new ConnectionManager();
- //       connMgr.setChunkedStreamingBuffer(8192);
-        connMgr.setConnectTimeout(connectTimeout);
-        connMgr.setReadTimeout(readTimeout);
-        connMgr.setGenerateRandomUserAgent(true);
-
+        this.connMgr = new RequestBuilderImpl();
+        this.connMgr
+                .connectTimeout(connectTimeout)
+                .readTimeout(readTimeout)
+                .randomUserAgent(true);
     }
 
     @Override

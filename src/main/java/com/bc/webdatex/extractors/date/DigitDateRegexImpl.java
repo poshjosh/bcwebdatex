@@ -16,14 +16,16 @@
 
 package com.bc.webdatex.extractors.date;
 
-import com.bc.util.Log;
 import java.util.Calendar;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Sep 17, 2016 6:17:52 PM
  */
 public class DigitDateRegexImpl implements DigitDateRegex {
+
+    private transient static final Logger LOG = Logger.getLogger(DigitDateRegexImpl.class.getName());
     
     private final boolean acceptSingleDigitDay;
     private final boolean acceptSingleDigitMonth;
@@ -49,7 +51,7 @@ public class DigitDateRegexImpl implements DigitDateRegex {
         String yyyyMMdd = year + separator + month + '(' + separator + day + ")?";
         String ddMMyyyy = '(' + day + separator + ")?" + month + separator + year;
         String regex = '(' + yyyyMMdd + '|' + ddMMyyyy + ')';
-        Log.getInstance().log(Level.FINE, "Regex: {0}", this.getClass(), regex);
+        LOG.log(Level.FINE, "Regex: {0}", regex);
         return regex;
     }
     

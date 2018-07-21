@@ -1,5 +1,7 @@
-package com.bc.webdatex.filters;
+package com.bc.webdatex.nodefilters;
 
+import com.bc.webdatex.filters.Filter;
+import com.bc.webdatex.filters.ImageSrcFilter;
 import org.htmlparser.Attribute;
 import org.htmlparser.Node;
 import org.htmlparser.NodeFilter;
@@ -34,14 +36,15 @@ public class ImageNodeFilter implements NodeFilter {
         if (attr == null) {
           return false;
         }
-        String value = attr.getValue();
+        String value = attr.getValue(); 
         if (value == null) {
           return false;
         }
         if(imageSrcFilter == null) {
-            return true;
+            return false;
         }else{
-            boolean accepted = imageSrcFilter.test(value);
+            value = tag.getPage().getAbsoluteURL(value);
+            final boolean accepted = imageSrcFilter.test(value);
             return accepted;
         }
       }

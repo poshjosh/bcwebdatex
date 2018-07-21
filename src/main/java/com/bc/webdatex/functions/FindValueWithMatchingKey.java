@@ -18,18 +18,18 @@ public class FindValueWithMatchingKey
         implements BiFunction<Map, String, String>, Serializable {
 
   @Override
-  public String apply(Map m, String text)
-  {
+  public String apply(Map m, String text) {
+      
     Object column = null;
     
     Iterator iter = m.keySet().iterator();
     
-    while (iter.hasNext())
-    {
+    while (iter.hasNext()){
+        
       String key = iter.next().toString();
       
-      String tgt = null;
-      String input = null;
+      String tgt;
+      String input;
       
       if (key.length() > text.length()) {
         tgt = text.toLowerCase();

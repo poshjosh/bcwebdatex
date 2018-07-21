@@ -1,7 +1,6 @@
 package com.bc.webdatex.util;
 
 import com.bc.util.QueryParametersConverter;
-import com.bc.util.Log;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -35,6 +34,7 @@ import org.htmlparser.util.NodeList;
  * @since    2.0
  */
 public class Util {
+    private transient static final Logger LOG = Logger.getLogger(Util.class.getName());
 
     private transient static final Logger logger = Logger.getLogger(Util.class.getName());
     
@@ -55,80 +55,6 @@ public class Util {
         emailPattern = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}");
     }
     
-  public static Node deepClone(Node node) throws CloneNotSupportedException {
-    return deepClone(node, true, true);
-  }
-  
-  public static Node deepClone(
-          Node node, boolean parents, boolean children) 
-          throws CloneNotSupportedException {
-      
-    Node clone = (Node)node.clone();
-    
-    if (parents) {
-        
-      Node nodeParent = node.getParent();
-      
-      Node cloneParent;
-      if (nodeParent == null) {
-        cloneParent = null;
-      } else {
-        cloneParent = deepClone(nodeParent, true, false);
-      }
-      
-      clone.setParent(cloneParent);
-      
-      if (nodeParent != null) {
-          
-        NodeList nodeSiblings = nodeParent.getChildren();
-        
-        NodeList cloneSiblings = new NodeList();
-        
-        for (Node nodeSibling : nodeSiblings) {
-            
-          Node cloneSibling;
-          if (nodeSibling.equals(node)) {
-            cloneSibling = clone;
-          } else {
-            cloneSibling = deepClone(nodeSibling, false, true);
-          }
-          
-          cloneSiblings.add(cloneSibling);
-        }
-        
-        cloneParent.setChildren(cloneSiblings);
-      }
-    }
-    
-    if (children) {
-        
-      NodeList nodeChildren = node.getChildren();
-      
-      NodeList cloneChildren;
-      if (nodeChildren == null) {
-          
-        cloneChildren = null;
-        
-      } else {
-          
-        cloneChildren = new NodeList();
-        
-        for (Node child : nodeChildren) {
-            
-          Node childClone = deepClone(child, false, true);
-          
-          childClone.setParent(clone);
-          
-          cloneChildren.add(childClone);
-        }
-      }
-      
-      clone.setChildren(cloneChildren);
-    }
-    
-    return clone;
-  }
-    
     public static void printIfEquals(Node node, String expectedNodeName) {
         
         Tag tag = null;
@@ -141,7 +67,9 @@ public class Util {
         }
 
         if(tag.getTagName().equals(expectedNodeName.toUpperCase())) {
-Log.getInstance().log(Level.FINEST, "@Util.printIfEquals Tag: {0}", Util.class, tag);
+if(LOG.isLoggable(Level.FINEST)){
+LOG.log(Level.FINEST, "@Util.printIfEquals Tag: {0}", tag);
+}
         }
     }
     
@@ -157,7 +85,9 @@ Log.getInstance().log(Level.FINEST, "@Util.printIfEquals Tag: {0}", Util.class, 
             NodeList list = node.getChildren();
 
             if(list != null) {
-Log.getInstance().log(Level.INFO, "Child count: {0}", Util.class, list.size());
+if(LOG.isLoggable(Level.INFO)){
+LOG.log(Level.INFO, "Child count: {0}", list.size());
+}
                 NodeList extr = list.extractAllNodesThatMatch(new NodeFilter(){
                     @Override
                     public boolean accept(Node node) {
@@ -171,7 +101,9 @@ Log.getInstance().log(Level.INFO, "Child count: {0}", Util.class, list.size());
                         return (attr != null && childAttrVal.equals(attr.getValue()));
                     }
                 }, true);
-Log.getInstance().log(Level.FINEST, "Extract count: {0}", Util.class, extr.size());
+if(LOG.isLoggable(Level.FINEST)){
+LOG.log(Level.FINEST, "Extract count: {0}", extr.size());
+}
                 return extr == null ? -1 : extr.size();
             }
         }
@@ -300,7 +232,9 @@ logger.log(Level.FINER, "{0}. URL file parts: {1}", new Object[]{logger.getName(
     }
     
     public static String getBaseURL(String urlString) {
-Log.getInstance().log(Level.FINER, "Input url: {0}", Util.class, urlString);        
+if(LOG.isLoggable(Level.FINER)){
+LOG.log(Level.FINER, "Input url: {0}", urlString);
+}        
         URL url = null;
         try{
             url = new URL(urlString);
@@ -316,15 +250,19 @@ Log.getInstance().log(Level.FINER, "Input url: {0}", Util.class, urlString);
             logger.log(Level.WARNING, "{0}", e.toString());
         }
         String output  = url == null ? null : url.toString();
-Log.getInstance().log(Level.FINER, "Output url: {0}", Util.class, output);        
+if(LOG.isLoggable(Level.FINER)){
+LOG.log(Level.FINER, "Output url: {0}", output);
+}        
         return output;
     }
     
-    public static StringBuilder appendQuery(Map params, StringBuilder builder) {
-        return appendQuery(params, builder, "&");
+    public static StringBuilder appendQuery(Map params, StringBuilder builder,
+            boolean encode, String charset) {
+        return appendQuery(params, builder, "&", encode, charset);
     }
     
-    public static StringBuilder appendQuery(Map params, StringBuilder builder, String separator) {
+    public static StringBuilder appendQuery(Map params, StringBuilder builder, 
+            String separator, boolean encode, String charset) {
         
         if(builder == null) {
             builder = new StringBuilder();
@@ -332,7 +270,7 @@ Log.getInstance().log(Level.FINER, "Output url: {0}", Util.class, output);
         
         QueryParametersConverter c = new QueryParametersConverter(separator);
         
-        return builder.append(c.convert(params));
+        return builder.append(c.convert(params, encode, charset));
     }
 
     public static Map<String, String> getParameters(

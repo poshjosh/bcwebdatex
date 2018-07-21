@@ -1,27 +1,22 @@
 package com.bc.webdatex.extractors.node;
 
+import com.bc.webdatex.context.NodeExtractorConfig;
 import com.bc.webdatex.nodefilters.NodeVisitingFilter;
 import com.bc.webdatex.nodefilters.NodesFilter;
 import com.bc.util.StringArrayUtils;
 import com.bc.webdatex.util.Util;
-import com.bc.webdatex.locator.TagLocator;
-import com.bc.webdatex.locator.impl.TagLocatorImpl;
 import com.bc.webdatex.nodefilters.NodeVisitingFilterImpl;
+import com.bc.webdatex.nodefilters.TextFilter;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.logging.Logger;
-import org.htmlparser.Attribute;
-import org.htmlparser.NodeFilter;
 import org.htmlparser.Remark;
 import org.htmlparser.Tag;
 import org.htmlparser.Text;
 import org.htmlparser.util.NodeList;
-import org.htmlparser.visitors.AbstractNodeVisitor;
+import org.htmlparser.visitors.NodeVisitorImpl;
+import org.htmlparser.util.NodeListImpl;
 
 /**
  * @(#)DataExtractor.java   29-Sep-2015 14:17:51
@@ -36,7 +31,7 @@ import org.htmlparser.visitors.AbstractNodeVisitor;
  * @version  2.0
  * @since    2.0
  */
-public class NodeExtractorImpl extends AbstractNodeVisitor implements NodeExtractor {
+public class NodeExtractorImpl extends NodeVisitorImpl implements NodeExtractor {
 
     private static final Logger logger = Logger.getLogger(NodeExtractorImpl.class.getName());
     
@@ -52,7 +47,7 @@ public class NodeExtractorImpl extends AbstractNodeVisitor implements NodeExtrac
     
     private boolean replaceNonBreakingSpace;
     
-    private String id;
+    private Object id;
     
     private String separator;
 
@@ -60,51 +55,31 @@ public class NodeExtractorImpl extends AbstractNodeVisitor implements NodeExtrac
     
     private StringBuilder extract;
     
-    private String [] nodesToRetainAttributes;
-    
-    private String [] attributesToAccept; 
-    
     private String [] attributesToExtract;
     
-    private AttributesExtractor attributesExtractor;
+    private final AttributesExtractor attributesExtractor;
     
-    private NodeVisitingFilter nodeVisitingFilter;
-    
-    private Set<String> attributesToAcceptAll;
+    private final NodeVisitingFilter nodeVisitingFilter;
 
-    public NodeExtractorImpl() {
-        this(Long.toHexString(System.currentTimeMillis()));
+    public NodeExtractorImpl(Object id, NodeExtractorConfig config) {
+        this(id, config, (tag, attrs) -> new String[0], 0.0f, false);
     }
     
-    public NodeExtractorImpl(String id) {
+    public NodeExtractorImpl(Object id, NodeExtractorConfig config, AttributesExtractor ae, float tolerance, boolean greedy) {
         this.id = Objects.requireNonNull(id);
+        this.attributesExtractor = Objects.requireNonNull(ae);
         this.acceptScripts = false;
         this.concatenateMultipleExtracts = true;
         this.enabled = true;
         this.extract = new StringBuilder();
-        this.remainginEndTags = new NodeList();
+        this.remainginEndTags = new NodeListImpl();
         this.separator = USE_DEFAULT;
-    }
-    
-    public NodeExtractorImpl(NodeExtractorConfig config, String id) {
-        this(id);
-        this.attributesToAccept = config.getAttributesToAccept(id);
         this.attributesToExtract = config.getAttributesToExtract(id);
         this.concatenateMultipleExtracts = config.isConcatenateMultipleExtracts(id, false);
 
-        this.nodesToRetainAttributes = config.getNodesToRetainAttributes(id); 
-        this.setNodeTypesToAccept(config.getNodeTypesToAccept(id));
-        this.setNodeTypesToReject(config.getNodeTypesToReject(id));
-        this.setNodesToAccept(config.getNodesToAccept(id));
-        this.setNodesToReject(config.getNodeToReject(id));
-
-        this.setTagLocator(new TagLocatorImpl(id, config.getTransverse(id)));
+        this.nodeVisitingFilter = new NodeVisitingFilterImpl(id, config, tolerance, greedy);
 
         this.replaceNonBreakingSpace = config.isReplaceNonBreakingSpace(id, false);
-
-        this.setTextToAccept(null);
-        this.setTextToDisableOn(config.getTextToDisableOn(id));
-        this.setTextToReject(config.getTextToReject(id));
     }
     
     @Override
@@ -123,22 +98,10 @@ public class NodeExtractorImpl extends AbstractNodeVisitor implements NodeExtrac
     @Override
     public void beginParsing() {
         
-        if(this.attributesToAcceptAll == null) {
-            this.attributesToAcceptAll = new HashSet<>();
-        }else{
-            this.attributesToAcceptAll.clear();
-        }
-        if(this.attributesToAccept != null) {
-            this.attributesToAcceptAll.addAll(Arrays.asList(attributesToAccept));
-        }
-        if(this.getAttributesToExtract() != null) {
-            this.attributesToAcceptAll.addAll(Arrays.asList(this.getAttributesToExtract()));
-        }
-
-        this.attributesExtractor = new AttributesExtractorImpl(this.id);
-        
         if(this.separator == USE_DEFAULT) {
-            String [] nodeTypes = this.getNodeTypesToAccept();
+            
+            final String [] nodeTypes = this.getNodesFilter() == null ? null : this.getNodesFilter().getNodeTypesToAccept();
+            
             if(nodeTypes != null && StringArrayUtils.matches(nodeTypes, "tag", StringArrayUtils.MatchType.EQUALS_IGNORE_CASE)) {
                 this.separator = "<BR/><BR/>\n";
             }else{
@@ -193,12 +156,14 @@ final boolean LOG = false; //"targetNode6".equals(id);// && tag.toTagHtml().star
         
         if(!this.isEnabled()) return;
         
-        logger.finer(() -> this.getId()+"-Extractor.visitTag: "+tag.toTagHtml());
+        final String html = tag.toTagHtml(); 
+        
+        logger.finer(() -> this.getId()+"-Extractor.visitTag: " + html);
 
         boolean attributesOnly = this.isExtractOnlyAttributes();
         
   
-//if(LOG) System.out.println("================== #visitTag(Tag): "+tag.toTagHtml());        
+//if(LOG) System.out.println("================== #visitTag(Tag): "+html);        
 //if(LOG) System.out.println("================== Extract only attributes "+attributesOnly);        
         // This comes before filtering
         if(this.shouldAppendSeparator(tag)) {
@@ -209,7 +174,7 @@ final boolean LOG = false; //"targetNode6".equals(id);// && tag.toTagHtml().star
            return;
         }
         
-        logger.finer(() -> this.getId()+"-Extractor Extracting: "+tag.toTagHtml());
+        logger.finer(() -> this.getId()+"-Extractor Extracting: "+html);
 
 //XLogger.getInstance().log(Level.FINER, "Attributes to extract: {0}", this.getClass(), 
 //(this.getAttributesToExtract()==null?null:Arrays.toString(this.getAttributesToExtract())));
@@ -218,45 +183,30 @@ final boolean LOG = false; //"targetNode6".equals(id);// && tag.toTagHtml().star
             this.remainginEndTags.add(tag.getEndTag());
         }
         
-        boolean keepAttributes = false;
-//if(LOG) System.out.println("================== NodesToRetainAttributes "+(this.nodesToRetainAttributes==null?null:Arrays.toString(this.nodesToRetainAttributes)));        
-        if(this.nodesToRetainAttributes != null) {
-            for(String node:this.nodesToRetainAttributes) {
-                keepAttributes = node.equals(tag.getTagName());
-                if(keepAttributes) break;
-            }
-        }
-        
-        if(keepAttributes) {
 //if(LOG) System.out.println("================== ArributesToAccept "+(this.attributesToAccept==null?null:Arrays.toString(this.attributesToAccept)));        
+        
+        final String htmlUpdated = tag.toTagHtml();
+        
+//if(LOG) System.out.println("================== After keeping attributes to accept, tag: "+html);                    
             
-            this.keepAttributesToAcceptOrExtract(tag);
-//if(LOG) System.out.println("================== After keeping attributes to accept, tag: "+tag.toTagHtml());                    
-        }
-            
-if(LOG) System.out.println(this.getClass().getName()+". APPENDING "+
-        (attributesOnly?"Only tag attributes":keepAttributes?"Tag + attributes":"Tag - attributes"));
+if(LOG) System.out.println(this.getClass().getName()+". APPENDING attributes only: " + attributesOnly);
         
         if(attributesOnly) {
 
             final String [] extractedAttributes = this.attributesExtractor.extract(tag, this.attributesToExtract);
             
-if(LOG) System.out.println("================== Extracted "+Arrays.toString(extractedAttributes)+", from: "+tag.toTagHtml());
+if(LOG) System.out.println("================== Extracted "+Arrays.toString(extractedAttributes)+", from: "+html);
 
             logger.fine(() -> MessageFormat.format("Extracted attributes: {0} from tag: {1}",
-                    Arrays.toString(extractedAttributes), tag.toTagHtml()));
+                    Arrays.toString(extractedAttributes), html));
 
             for(String attrVal : extractedAttributes) {
                 extract.append(attrVal).append(' ');
             }    
             
-        }else if(keepAttributes) {
-            
-            extract.append(tag.toTagHtml());
-            
         }else{
             
-            extract.append('<').append(tag.getTagName()).append('>');
+            extract.append(htmlUpdated);
         }
     }
 
@@ -264,13 +214,13 @@ if(LOG) System.out.println("================== Extracted "+Arrays.toString(extra
     public void visitEndTag(Tag tag) {
 
 //if("targetNode0".equals(id)) System.out.println(this.getClass().getName()+"#visitEndTag. "+tag.getRawTagName());
-        
+
         if(!this.acceptScripts && !this.isEnabled() && tag.getTagName().equalsIgnoreCase("SCRIPT")) {
             this.setEnabled(true);
         }
         
         if(!this.isEnabled()) return;
-        
+
         // Order of method call important
         
         super.visitEndTag(tag);
@@ -278,11 +228,11 @@ if(LOG) System.out.println("================== Extracted "+Arrays.toString(extra
         if(!nodeVisitingFilter.acceptEndTag(tag)) {
             return;
         }
-        
+
         if(this.isExtractOnlyAttributes()) {
             return;
         }
-        
+
         this.remainginEndTags.remove(tag);
         
         logger.finer(() -> this.getId()+"-Extractor Extracting: "+tag.toTagHtml());
@@ -376,51 +326,9 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         }
         return tag.getEndTag() != null;        
     }
-
-    private void keepAttributesToAcceptOrExtract(Tag tag) {
-        
-        if(this.attributesToAcceptAll == null || this.attributesToAcceptAll.isEmpty()) {
-            return;
-        }
-        
-        ArrayList<String> remove = new ArrayList<>();
-        
-        List attributes = tag.getAttributes();
-
-        for(Object oval:attributes) {
-
-            Attribute attr = (Attribute)oval;
-            
-            if(!attr.isValued()) continue;
-
-            String name = attr.getName();
-            
-            if(name == null) {
-                continue;
-            }
-            
-            if(!this.attributesToAcceptAll.contains(name)) {
-                remove.add(name);
-            }
-        }
-        
-        for(String name:remove) {
-            tag.removeAttribute(name);
-        }
-    }
     
     public boolean isExtractOnlyAttributes() {
         return this.attributesExtractor != null && this.attributesToExtract != null && this.attributesToExtract.length != 0;
-    }
-
-    @Override
-    public boolean isDone() {
-        return nodeVisitingFilter.isDone();
-    }
-
-    @Override
-    public boolean isStarted() {
-        return nodeVisitingFilter.isStarted();
     }
     
     @Override
@@ -433,12 +341,12 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return extract;
     }
     
-    private NodeVisitingFilter initNodeVisitingFilter() {
-        if(this.nodeVisitingFilter == null) {
-            this.nodeVisitingFilter = new NodeVisitingFilterImpl(this.id, null, null);
-        }
-        return this.nodeVisitingFilter;
-    }
+//    private NodeVisitingFilter initNodeVisitingFilter() {
+//        if(this.nodeVisitingFilter == null) {
+//            this.nodeVisitingFilter = new NodeVisitingFilterImpl(this.id, null);
+//        }
+//        return this.nodeVisitingFilter;
+//    }
 
     public String[] getAttributesToExtract() {
         return this.attributesToExtract;
@@ -453,103 +361,24 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
         return nodeVisitingFilter;
     }
 
-//    @Override
-    public void setFilter(NodeVisitingFilter nodeVisitingFilter) {
-        this.nodeVisitingFilter = nodeVisitingFilter;
-    }
-
     public String [] getTextToReject() {
-        return this.nodeVisitingFilter == null ? null : this.nodeVisitingFilter.getTextToReject();
-    }
-    
-    public void setTextToReject(String [] textToReject) {
-        this.initNodeVisitingFilter().setTextToAccept(textToReject);
+        final TextFilter textFilter = this.getTextFilter();
+        return textFilter == null ? null : textFilter.getTextToReject();
     }
 
     public String [] getTextToAccept() {
-        return this.nodeVisitingFilter == null ? null : this.nodeVisitingFilter.getTextToAccept();
+        final TextFilter textFilter = this.getTextFilter();
+        return textFilter == null ? null : textFilter.getTextToAccept();
     }
     
-    public void setTextToAccept(String [] textToAccept) {
-        this.initNodeVisitingFilter().setTextToAccept(textToAccept);
-    }
-
-    public String [] getTextToDisableOn() {
-        return this.nodeVisitingFilter == null ? null : this.nodeVisitingFilter.getTextToDisableOn();
-    }
-    
-    public void setTextToDisableOn(String [] textToDisableOn) {
-        this.initNodeVisitingFilter().setTextToDisableOn(textToDisableOn);
-    }
-    
-    public NodeFilter getStartAtFilter() {
-        return this.nodeVisitingFilter == null ? null : this.nodeVisitingFilter.getStartAtFilter();
-    }
-
-    public void setStartAtFilter(NodeFilter startAtFilter) {
-        this.initNodeVisitingFilter().setStartAtFilter(startAtFilter);
-    }
-
-    public NodeFilter getStopAtFilter() {
-        return this.nodeVisitingFilter == null ? null : this.nodeVisitingFilter.getStopAtFilter();
-    }
-
-    public void setStopAtFilter(NodeFilter stopAtFilter) {
-        this.initNodeVisitingFilter().setStopAtFilter(stopAtFilter);
-    }
-    
-    public void setTagLocator(TagLocator tagLocator) {
-        this.initNodeVisitingFilter().setTagLocator(tagLocator);
-    }
-    
-    @Override
-    public String[] getNodeTypesToAccept() {
-        return nodeVisitingFilter == null ? null : nodeVisitingFilter.getNodeTypesToAccept();
-    }
-
-//    @Override
-    public void setNodeTypesToAccept(String[] nodeTypesToAccept) {
-        this.initNodeVisitingFilter().setNodeTypesToAccept(nodeTypesToAccept);
-    }
-
-    @Override
-    public String[] getNodeTypesToReject() {
-        return nodeVisitingFilter == null ? null : nodeVisitingFilter.getNodeTypesToReject();
-    }
-
-//    @Override
-    public void setNodeTypesToReject(String[] nodeTypesToReject) {
-        this.initNodeVisitingFilter().setNodeTypesToReject(nodeTypesToReject);
-    }
-
-    @Override
-    public String[] getNodesToAccept() {
-        return nodeVisitingFilter == null ? null : nodeVisitingFilter.getNodesToAccept();
-    }
-
-//    @Override
-    public void setNodesToAccept(String[] nodesToAccept) {
-        this.initNodeVisitingFilter().setNodesToAccept(nodesToAccept);
-    }
-
-    @Override
-    public String[] getNodesToReject() {
-        return nodeVisitingFilter == null ? null : nodeVisitingFilter.getNodesToReject();
-    }
-
-//    @Override
-    public void setNodesToReject(String[] nodesToReject) {
-        this.initNodeVisitingFilter().setNodesToReject(nodesToReject);
-    }
-
     @Override
     public NodesFilter getNodesFilter() {
         return this.nodeVisitingFilter == null ? null : this.nodeVisitingFilter.getNodesFilter();
     }
 
-//    @Override
-    public void setNodesFilter(NodesFilter nodesFilter) {
-        this.initNodeVisitingFilter().setNodesFilter(nodesFilter);
+    @Override
+    public TextFilter getTextFilter() {
+        return this.nodeVisitingFilter == null ? null : this.nodeVisitingFilter.getTextFilter();
     }
 
     @Override
@@ -593,12 +422,12 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
     }
 
     @Override
-    public String getId() {
+    public Object getId() {
         return id;
     }
 
 //    @Override
-    public void setId(String id) {
+    public void setId(Object id) {
         this.id = id;
     }
 
@@ -610,26 +439,6 @@ if(LOG) System.out.println(this.getClass().getName()+". APPENDING text: "+text);
 //    @Override
     public void setSeparator(String separator) {
         this.separator = separator;
-    }
-
-    @Override
-    public String[] getAttributesToAccept() {
-        return attributesToAccept;
-    }
-
-//    @Override
-    public void setAttributesToAccept(String[] attributesToAccept) {
-        this.attributesToAccept = attributesToAccept;
-    }
-
-    @Override
-    public String[] getNodesToRetainAttributes() {
-        return nodesToRetainAttributes;
-    }
-
-//    @Override
-    public void setNodesToRetainAttributes(String[] nodesToRetainAttributes) {
-        this.nodesToRetainAttributes = nodesToRetainAttributes;
     }
 }
 /**

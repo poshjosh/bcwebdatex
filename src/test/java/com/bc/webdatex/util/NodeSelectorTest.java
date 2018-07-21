@@ -16,9 +16,8 @@
 package com.bc.webdatex.util;
 
 import com.bc.webdatex.extractors.Extractor;
-import com.bc.webdatex.extractors.node.NodeSelector;
-import com.bc.dom.HtmlDocumentImpl;
 import java.awt.Dimension;
+import java.util.Collections;
 import java.util.List;
 import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
@@ -33,7 +32,7 @@ import org.htmlparser.tags.StyleTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 import org.junit.Test;
-import com.bc.dom.HtmlDocument;
+import org.htmlparser.dom.HtmlDocument;
 import javax.swing.JFrame;
 
 /**
@@ -83,12 +82,13 @@ System.out.println();
         System.out.println("extract");
         Parser parser = new Parser();
         parser.setURL(url);
-        NodeList nodes = parser.parse(null);
-System.out.println("\n--------------- HTML -----------------");
-System.out.println(nodes.toHtml(true).replace('\n', ' '));        
-        HtmlDocument dom = new HtmlDocumentImpl(url, nodes);
-        nodes = dom.getBody().getChildren();
+        HtmlDocument dom = parser.parse(null);
+// System.out.println("\n--------------- HTML -----------------");
+// System.out.println(nodes.toHtml(true).replace('\n', ' '));        
         
+        final NodeList nodesInBody = dom.getBody().getChildren();
+        final List<Node> nodes = nodesInBody == null || nodesInBody.isEmpty() ? Collections.EMPTY_LIST : nodesInBody;
+
         NodeFilter filter = new NotFilter(
                 new OrFilter(
                         new NodeClassFilter(ScriptTag.class), 
