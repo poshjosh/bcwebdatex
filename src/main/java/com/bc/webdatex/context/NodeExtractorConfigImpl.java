@@ -2,8 +2,7 @@ package com.bc.webdatex.context;
 
 import com.bc.json.config.JsonConfig;
 import com.bc.nodelocator.ConfigName;
-import com.bc.nodelocator.impl.ListTransverse;
-import com.bc.nodelocator.impl.PathBuilder;
+import com.bc.nodelocator.impl.ListPath;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,20 +47,15 @@ public class NodeExtractorConfigImpl implements Serializable, NodeExtractorConfi
   }
   
   @Override
-  public List<String> [] getPath(Object id) {
-    return new PathBuilder().build(this.getTransverse(id));
-  }
-    
-  @Override
-  public List<String> getPathFlattened(Object id) {
-    return new PathBuilder().flatten(this.getTransverse(id));
+  public Path<String> getPathFlattened(Object id) {
+    return this.getPath(id).flatten();
   }
 
   @Override
-  public Path<String> getTransverse(Object id) {
+  public Path<String> getPath(Object id) {
     final String [] arr = this.getTransverseArray(id);
     final List<String> list = arr == null || arr.length == 0 ? Collections.EMPTY_LIST : Arrays.asList(arr);
-    return new ListTransverse(list);
+    return new ListPath(list);
   }
   
   public String[] getTransverseArray(Object id) {

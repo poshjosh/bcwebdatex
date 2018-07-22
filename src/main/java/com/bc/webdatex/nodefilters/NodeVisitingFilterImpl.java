@@ -60,10 +60,10 @@ public class NodeVisitingFilterImpl implements NodeVisitingFilter, Serializable 
         this(id, config, 
                 greedy ? 
                 new NodeLocatingFilterGreedy(
-                        id, config.getPathFlattened(id), new NodeMatcherHtmlparser(tolerance)
+                        id, config.getPathFlattened(id).toList(), new NodeMatcherHtmlparser(tolerance)
                 ) :
                 new NodeLocatingFilterImpl(
-                        id, config.getPathFlattened(id), new NodeMatcherHtmlparser(tolerance)
+                        id, config.getPathFlattened(id).toList(), new NodeMatcherHtmlparser(tolerance)
                 ) 
         );
     }

@@ -2,6 +2,7 @@ package com.bc.webdatex.extractors;
 
 import com.bc.json.config.JsonConfig;
 import com.bc.nodelocator.ConfigName;
+import com.bc.nodelocator.Path;
 import com.bc.webdatex.extractors.node.NodeExtractor;
 import com.bc.webdatex.extractors.node.NodeExtractorImpl;
 import com.bc.webdatex.context.CapturerContext;
@@ -224,7 +225,7 @@ public class PageExtractorImpl extends NodeListExtractorImpl implements PageExtr
     
     Object[] cols = cs.getColumns(id);
     
-    final List<String> path = cs.getPathFlattened(id);
+    final Path<String> path = cs.getPathFlattened(id);
     
     if (cols == null || cols.length == 0) {
       LOG.finer(() -> MessageFormat.format("{0}.{1} == null", id, ConfigName.ids));
@@ -246,7 +247,7 @@ public class PageExtractorImpl extends NodeListExtractorImpl implements PageExtr
       
     final NodeExtractorConfig config = context.getNodeExtractorConfig();
     
-    final List<String> path = config.getPathFlattened(id);
+    final Path<String> path = config.getPathFlattened(id);
     
     final NodeExtractorImpl extractor;
     

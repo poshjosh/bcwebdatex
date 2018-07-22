@@ -1,6 +1,5 @@
 package com.bc.webdatex.context;
 
-import java.util.List;
 import java.util.Map;
 import com.bc.nodelocator.Path;
 
@@ -12,11 +11,9 @@ public interface NodeExtractorConfig {
     
     String [] getUrlDatePatterns();
 
-    Path<String> getTransverse(Object id);
+    Path<String> getPath(Object id);
     
-    List<String> [] getPath(Object id);
-    
-    List<String> getPathFlattened(Object id);
+    Path<String> getPathFlattened(Object id);
 
     String[] getTextToReject(Object id);
 
