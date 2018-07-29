@@ -1,10 +1,10 @@
 package com.bc.webdatex.nodefilters;
 
 import com.bc.nodelocator.ConfigName;
-import com.bc.webdatex.context.NodeExtractorConfig;
 import java.util.Arrays;
 import java.util.Objects;
 import org.htmlparser.Node;
+import com.bc.webdatex.context.ExtractionConfig;
 
 
 /**
@@ -32,7 +32,7 @@ public class NodesFilterImpl extends FilterNode implements NodesFilter {
     
     private final String [] nodesToReject;
 
-    public NodesFilterImpl(Object id, NodeExtractorConfig config) { 
+    public NodesFilterImpl(Object id, ExtractionConfig config) { 
         this(
                 id, 
                 config.getNodeTypesToAccept(id),

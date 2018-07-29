@@ -45,7 +45,7 @@ public class CapturerContextFactoryImpl implements CapturerContextFactory {
   }
 
   @Override
-  public CapturerContext getContext(String name) {
+  public ExtractionContext getContext(String name) {
     try{
       return getContext(configService.getConfig(name, null));
     }catch(IOException | ParseException e) {
@@ -54,7 +54,7 @@ public class CapturerContextFactoryImpl implements CapturerContextFactory {
   }
   
   @Override
-  public CapturerContext getContext(JsonConfig config) {
+  public ExtractionContext getContext(JsonConfig config) {
       
     Objects.requireNonNull(config);
     
@@ -62,12 +62,12 @@ public class CapturerContextFactoryImpl implements CapturerContextFactory {
     
     LOG.log(Level.FINER, "Class name: {0}", className);
     
-    CapturerContext output = null;
+    ExtractionContext output = null;
     try
     {
       Class aClass = Class.forName(className);
       
-      output = (CapturerContext)aClass.getConstructor(new Class[] { JsonConfig.class }).newInstance(new Object[] { config });
+      output = (ExtractionContext)aClass.getConstructor(new Class[] { JsonConfig.class }).newInstance(new Object[] { config });
     }
     catch (ClassNotFoundException e)
     {
@@ -81,7 +81,7 @@ public class CapturerContextFactoryImpl implements CapturerContextFactory {
     return output;
   }
   
-  protected CapturerContext newDefaultContext(JsonConfig config) {
+  protected ExtractionContext newDefaultContext(JsonConfig config) {
     return new CapturerContextImpl(config);
   }
   

@@ -12,7 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.bc.nodelocator.Path;
 
-public class NodeExtractorConfigImpl implements Serializable, NodeExtractorConfig {
+public class NodeExtractorConfigImpl implements Serializable, ExtractionConfig {
 
   private transient static final Logger LOG = Logger.getLogger(NodeExtractorConfigImpl.class.getName());
   
@@ -24,6 +24,7 @@ public class NodeExtractorConfigImpl implements Serializable, NodeExtractorConfi
     this.config = config;
   }
   
+  @Override
   public final JsonConfig getConfig() {
     return this.config;
   }

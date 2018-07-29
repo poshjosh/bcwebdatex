@@ -3,7 +3,6 @@ package com.bc.webdatex.nodefilters;
 import com.bc.nodelocator.NodeLocatingFilter;
 import com.bc.nodelocator.impl.NodeLocatingFilterGreedy;
 import com.bc.nodelocator.impl.NodeLocatingFilterImpl;
-import com.bc.webdatex.context.NodeExtractorConfig;
 import com.bc.nodelocator.htmlparser.NodeMatcherHtmlparser;
 import java.util.logging.Logger;
 import java.io.Serializable;
@@ -15,6 +14,7 @@ import org.htmlparser.Node;
 import org.htmlparser.Remark;
 import org.htmlparser.Tag;
 import org.htmlparser.Text;
+import com.bc.webdatex.context.ExtractionConfig;
 
 /**
  * @(#)NodeVisitingFilter.java   29-Sep-2015 13:57:11
@@ -56,7 +56,7 @@ public class NodeVisitingFilterImpl implements NodeVisitingFilter, Serializable 
     
     private NodeLocatingFilter<Node> nodeLocator;
 
-    public NodeVisitingFilterImpl(Object id, NodeExtractorConfig config, float tolerance, boolean greedy) {
+    public NodeVisitingFilterImpl(Object id, ExtractionConfig config, float tolerance, boolean greedy) {
         this(id, config, 
                 greedy ? 
                 new NodeLocatingFilterGreedy(
@@ -68,7 +68,7 @@ public class NodeVisitingFilterImpl implements NodeVisitingFilter, Serializable 
         );
     }
     
-    public NodeVisitingFilterImpl(Object id, NodeExtractorConfig config, NodeLocatingFilter<Node> nodeLocator) {
+    public NodeVisitingFilterImpl(Object id, ExtractionConfig config, NodeLocatingFilter<Node> nodeLocator) {
         
         this.id = Objects.requireNonNull(id);
         
@@ -113,7 +113,7 @@ public class NodeVisitingFilterImpl implements NodeVisitingFilter, Serializable 
     @Override
     public boolean acceptTag(Tag tag) {
         
-        final Level level = startedTarget && !doneTarget ? Level.FINE : Level.FINER;  
+        final Level level = startedTarget && !doneTarget ? Level.FINER : Level.FINEST;  
 
         if(LOG.isLoggable(level)) {
             LOG.log(level, "{0} Tag: {1}", new Object[]{id, tag.toTagHtml()});

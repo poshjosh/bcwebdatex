@@ -9,11 +9,11 @@ import com.bc.webdatex.extractors.PageExtractor;
 import com.bc.webdatex.extractors.node.AttributesExtractor;
 import java.util.function.UnaryOperator;
 
-public interface CapturerContext {
+public interface ExtractionContext {
     
   AttributesExtractor getAttributesExtractor(Object id);
         
-  NodeExtractorConfig getNodeExtractorConfig();
+  ExtractionConfig getExtractionConfig();
   
   JsonConfig getConfig();
   

@@ -5,7 +5,6 @@ import com.bc.nodelocator.ConfigName;
 import com.bc.nodelocator.Path;
 import com.bc.webdatex.extractors.node.NodeExtractor;
 import com.bc.webdatex.extractors.node.NodeExtractorImpl;
-import com.bc.webdatex.context.CapturerContext;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.logging.Level;
 import org.htmlparser.Remark;
 import org.htmlparser.Tag;
 import org.htmlparser.Text;
-import com.bc.webdatex.context.NodeExtractorConfig;
 import com.bc.webdatex.extractors.node.AttributesExtractor;
 import com.bc.webdatex.functions.FindValueWithMatchingKey;
 import java.text.MessageFormat;
@@ -22,6 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
+import com.bc.webdatex.context.ExtractionContext;
+import com.bc.webdatex.context.ExtractionConfig;
 
 public class PageExtractorImpl extends NodeListExtractorImpl implements PageExtractor {
 
@@ -34,7 +34,7 @@ public class PageExtractorImpl extends NodeListExtractorImpl implements PageExtr
     }
   }
   
-  private final CapturerContext context;
+  private final ExtractionContext context;
   private final float tolerance;
   private final boolean greedy;
   private final Map<Object, NodeExtractor> nodeExtractors;
@@ -44,11 +44,11 @@ public class PageExtractorImpl extends NodeListExtractorImpl implements PageExtr
   private boolean withinTitleTag;
   private Tag titleTag;
   
-  public PageExtractorImpl(CapturerContext context){
+  public PageExtractorImpl(ExtractionContext context){
       this(context, 0.0f, false);
   }
   
-  public PageExtractorImpl(CapturerContext context, float tolerance, boolean greedy){
+  public PageExtractorImpl(ExtractionContext context, float tolerance, boolean greedy){
     this.context = Objects.requireNonNull(context);
     this.findValueWithMatchingKey = new FindValueWithMatchingKey();
     this.tolerance = tolerance;
@@ -221,7 +221,7 @@ public class PageExtractorImpl extends NodeListExtractorImpl implements PageExtr
   
   private void addExtractor(Object id) {
       
-    NodeExtractorConfig cs = context.getNodeExtractorConfig();
+    ExtractionConfig cs = context.getExtractionConfig();
     
     Object[] cols = cs.getColumns(id);
     
@@ -245,7 +245,7 @@ public class PageExtractorImpl extends NodeListExtractorImpl implements PageExtr
   @Override
   public NodeExtractor createNodeExtractor(Object id) {
       
-    final NodeExtractorConfig config = context.getNodeExtractorConfig();
+    final ExtractionConfig config = context.getExtractionConfig();
     
     final Path<String> path = config.getPathFlattened(id);
     
@@ -349,13 +349,13 @@ public class PageExtractorImpl extends NodeListExtractorImpl implements PageExtr
   }
 
   @Override
-  public CapturerContext getCapturerContext() {
+  public ExtractionContext getCapturerContext() {
     return this.context;
   }
   
   @Override
-  public NodeExtractorConfig getCapturerSettings() {
-    return this.context.getNodeExtractorConfig();
+  public ExtractionConfig getCapturerSettings() {
+    return this.context.getExtractionConfig();
   }
   
   @Override

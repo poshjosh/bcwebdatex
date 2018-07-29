@@ -19,13 +19,13 @@ import java.util.logging.Level;
 import org.htmlparser.NodeFilter;
 import java.util.logging.Logger;
 
-public class CapturerContextImpl implements CapturerContext, Serializable
+public class CapturerContextImpl implements ExtractionContext, Serializable
 {
 
   private transient static final Logger LOG = Logger.getLogger(CapturerContextImpl.class.getName());
   
   private JsonConfig config;
-  private NodeExtractorConfig _settings;
+  private ExtractionConfig _settings;
   
   public CapturerContextImpl() {
     this(null);
@@ -36,7 +36,7 @@ public class CapturerContextImpl implements CapturerContext, Serializable
   }
   
   @Override
-  public NodeExtractorConfig getNodeExtractorConfig() {
+  public ExtractionConfig getExtractionConfig() {
     if (this._settings == null) {
       this._settings = new NodeExtractorConfigImpl(getConfig());
     }
@@ -111,7 +111,7 @@ public class CapturerContextImpl implements CapturerContext, Serializable
     return this.getExtractor(this, tolerance, greedy);
   }
   
-  public PageExtractor getExtractor(CapturerContext context, float tolerance, boolean greedy) {
+  public PageExtractor getExtractor(ExtractionContext context, float tolerance, boolean greedy) {
       
     PageExtractor extractor = (PageExtractor)loadInstance(context.getConfig(), "extractor");
     
@@ -140,7 +140,7 @@ public class CapturerContextImpl implements CapturerContext, Serializable
     return getFormatter(this);
   }
   
-  public UnaryOperator<Map<String, Object>> getFormatter(CapturerContext context) {
+  public UnaryOperator<Map<String, Object>> getFormatter(ExtractionContext context) {
     final UnaryOperator<Map<String, Object>> formatter = (UnaryOperator)loadInstance(context.getConfig(), "formatter");
     return formatter;
   }

@@ -1,9 +1,12 @@
 package com.bc.webdatex.context;
 
+import com.bc.json.config.JsonConfig;
 import java.util.Map;
 import com.bc.nodelocator.Path;
 
-public interface NodeExtractorConfig {
+public interface ExtractionConfig {
+    
+    JsonConfig getConfig();
     
     Map getDefaults();
     

@@ -1,6 +1,5 @@
 package com.bc.webdatex.extractors.node;
 
-import com.bc.webdatex.context.NodeExtractorConfig;
 import com.bc.webdatex.nodefilters.NodeVisitingFilter;
 import com.bc.webdatex.nodefilters.NodesFilter;
 import com.bc.util.StringArrayUtils;
@@ -17,6 +16,7 @@ import org.htmlparser.Text;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.visitors.NodeVisitorImpl;
 import org.htmlparser.util.NodeListImpl;
+import com.bc.webdatex.context.ExtractionConfig;
 
 /**
  * @(#)DataExtractor.java   29-Sep-2015 14:17:51
@@ -61,11 +61,11 @@ public class NodeExtractorImpl extends NodeVisitorImpl implements NodeExtractor 
     
     private final NodeVisitingFilter nodeVisitingFilter;
 
-    public NodeExtractorImpl(Object id, NodeExtractorConfig config) {
+    public NodeExtractorImpl(Object id, ExtractionConfig config) {
         this(id, config, (tag, attrs) -> new String[0], 0.0f, false);
     }
     
-    public NodeExtractorImpl(Object id, NodeExtractorConfig config, AttributesExtractor ae, float tolerance, boolean greedy) {
+    public NodeExtractorImpl(Object id, ExtractionConfig config, AttributesExtractor ae, float tolerance, boolean greedy) {
         this.id = Objects.requireNonNull(id);
         this.attributesExtractor = Objects.requireNonNull(ae);
         this.acceptScripts = false;
@@ -140,7 +140,7 @@ public class NodeExtractorImpl extends NodeVisitorImpl implements NodeExtractor 
             
             extract = new StringBuilder().append(this.format(extract));
             
-            logger.fine(() -> this.getId()+"-Extractor, Extract: "+this.extract); 
+            logger.finer(() -> this.getId()+"-Extractor, Extract: "+this.extract); 
         }  
     }
     

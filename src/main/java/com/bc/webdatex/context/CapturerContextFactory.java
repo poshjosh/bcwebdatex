@@ -7,7 +7,7 @@ public interface CapturerContextFactory {
     
     JsonConfigService getConfigService();
 
-    CapturerContext getContext(JsonConfig config);
+    ExtractionContext getContext(JsonConfig config);
 
-    CapturerContext getContext(String name);
+    ExtractionContext getContext(String name);
 }

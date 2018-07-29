@@ -16,24 +16,24 @@
 
 package com.bc.webdatex.extractors.date;
 
+import com.bc.webdatex.extractors.Extractor;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import com.bc.webdatex.extractors.TextParser;
 import java.text.MessageFormat;
 import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Sep 17, 2016 12:51:05 PM
  */
-public class DateFromUrlExtractor implements TextParser<Date> {
+public class DateFromUrlExtractor implements Extractor<String, Date> {
 
     private transient static final Logger LOG = Logger.getLogger(DateFromUrlExtractor.class.getName());
     
-    private final TextParser<String> dateStringFromUrlExtractor;
-    private final TextParser<Date> dateExtractor;
+    private final Extractor<String, String> dateStringFromUrlExtractor;
+    private final Extractor<String, Date> dateExtractor;
 
     public DateFromUrlExtractor(
             boolean acceptSingleDigitDay, boolean acceptSingleDigitMonth, boolean acceptTwoDigitYear, 
@@ -57,8 +57,8 @@ public class DateFromUrlExtractor implements TextParser<Date> {
     }
     
     public DateFromUrlExtractor(
-            TextParser<String> dateStringFromUrlExtractor, 
-            TextParser<Date> dateFromDateStringExtractor) {
+            Extractor<String, String> dateStringFromUrlExtractor, 
+            Extractor<String, Date> dateFromDateStringExtractor) {
         this.dateStringFromUrlExtractor = Objects.requireNonNull(dateStringFromUrlExtractor);
         this.dateExtractor = Objects.requireNonNull(dateFromDateStringExtractor);
     }

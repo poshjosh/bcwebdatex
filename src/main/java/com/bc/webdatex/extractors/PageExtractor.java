@@ -1,19 +1,19 @@
 package com.bc.webdatex.extractors;
 
 import com.bc.json.config.JsonConfig;
-import com.bc.webdatex.context.CapturerContext;
 import com.bc.webdatex.extractors.node.NodeExtractor;
-import com.bc.webdatex.context.NodeExtractorConfig;
 import java.util.Set;
 import org.htmlparser.Tag;
+import com.bc.webdatex.context.ExtractionContext;
+import com.bc.webdatex.context.ExtractionConfig;
 
 public interface PageExtractor extends NodeListExtractor {
     
   JsonConfig getCapturerConfig();
   
-  CapturerContext getCapturerContext();
+  ExtractionContext getCapturerContext();
   
-  NodeExtractorConfig getCapturerSettings();
+  ExtractionConfig getCapturerSettings();
   
   Tag getTitleTag();
 
