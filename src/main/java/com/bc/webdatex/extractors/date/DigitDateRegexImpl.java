@@ -51,7 +51,7 @@ public class DigitDateRegexImpl implements DigitDateRegex {
         String yyyyMMdd = year + separator + month + '(' + separator + day + ")?";
         String ddMMyyyy = '(' + day + separator + ")?" + month + separator + year;
         String regex = '(' + yyyyMMdd + '|' + ddMMyyyy + ')';
-        LOG.log(Level.FINE, "Regex: {0}", regex);
+        LOG.log(Level.FINER, "Regex: {0}", regex);
         return regex;
     }
     

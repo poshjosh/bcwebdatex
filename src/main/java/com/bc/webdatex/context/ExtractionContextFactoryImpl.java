@@ -30,17 +30,17 @@ import com.bc.json.config.JsonConfigService;
 /**
  * @author Chinomso Bassey Ikwuagwu on Jul 16, 2018 3:12:46 PM
  */
-public class CapturerContextFactoryImpl implements CapturerContextFactory {
+public class ExtractionContextFactoryImpl implements ExtractionContextFactory {
 
-  private transient static final Logger LOG = Logger.getLogger(CapturerContextFactoryImpl.class.getName());
+  private transient static final Logger LOG = Logger.getLogger(ExtractionContextFactoryImpl.class.getName());
   
   private final JsonConfigService configService;
 
-  public CapturerContextFactoryImpl(File configsDir) {
+  public ExtractionContextFactoryImpl(File configsDir) {
     this.configService = new JsonConfigFromDirService(configsDir);
   }
 
-  public CapturerContextFactoryImpl(File configsDir, String defaultConfigName) {
+  public ExtractionContextFactoryImpl(File configsDir, String defaultConfigName) {
     this.configService = new JsonConfigFromDirService(configsDir, defaultConfigName);
   }
 

@@ -2,7 +2,7 @@ package com.bc.webdatex;
 
 import com.bc.json.config.JsonConfig;
 import com.bc.nodelocator.ConfigName;
-import com.bc.webdatex.context.CapturerContextFactoryImpl;
+import com.bc.webdatex.context.ExtractionContextFactoryImpl;
 import com.bc.webdatex.filters.DefaultUrlFilter;
 import java.io.IOException;
 import java.net.URI;
@@ -15,7 +15,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.simple.parser.ParseException;
-import com.bc.webdatex.context.CapturerContextFactory;
+import com.bc.webdatex.context.ExtractionContextFactory;
 
 /**
  * @(#)Tools.java   27-Oct-2014 12:21:27
@@ -32,9 +32,9 @@ import com.bc.webdatex.context.CapturerContextFactory;
 public class Tools {
     
     static final URI configsDir = null;
-    static final CapturerContextFactory factory;
+    static final ExtractionContextFactory factory;
     static {
-        factory = new CapturerContextFactoryImpl(
+        factory = new ExtractionContextFactoryImpl(
                 Paths.get(configsDir).toFile()
         );
     }
