@@ -15,13 +15,8 @@
  */
 package com.bc.webdatex.extractors.date;
 
-import com.bc.webdatex.extractors.date.SimpleDateFormatAddTimeIfNone;
 import java.text.ParseException;
 import java.util.Date;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -31,35 +26,54 @@ import org.junit.Test;
 public class SimpleDateFormatAddTimeIfNoneTest {
     
     public SimpleDateFormatAddTimeIfNoneTest() { }
-    
-    @BeforeClass
-    public static void setUpClass() { }
-    
-    @AfterClass
-    public static void tearDownClass() { }
-    
-    @Before
-    public void setUp() { }
-    
-    @After
-    public void tearDown() { }
 
     /**
      * Test of parse method, of class SimpleDateFormatAddTimeIfNone.
      */
     @Test
-    public void testParse() throws ParseException {
+    public void testParse() {
+        try{
+            this.doTestParse();
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void doTestParse() {
         
         System.out.println("parse");
         
-        String text = "16-09-13";
-        SimpleDateFormatAddTimeIfNone instance = new SimpleDateFormatAddTimeIfNone("yy-MM-dd");
-        instance.setLenient(true);
-//        instance.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-        Date expResult = null;
-        Date result = instance.parse(text);
-System.out.println("Result: " + result);         
-System.out.println("Result: " + instance.format(result));        
-//        assertEquals(expResult, result);
+        final String [] dateStrArr = {"16-09-13", "2018-08-06T00:37:41+00:00", "2018/08/06"};
+        final String [] patternArr = {"dd MMM yyyy", "MMM dd, yyyy", "dd MMM yyyy", 
+                "dd-MM-yyyy", "MMMM dd',' yyyy", "EEEE',' MMMM dd',' yyyy", 
+                "EEEE',' d MMMM yyyy", "MM/dd/yyyy KK:mm:ss a"};
+        
+        final SimpleDateFormatAddTimeIfNone dateFormat = new SimpleDateFormatAddTimeIfNone("yy-MM-dd");
+        final boolean lenientMayCauseFalsePositives = true;
+        dateFormat.setLenient(!lenientMayCauseFalsePositives);
+        
+        for(String pattern : patternArr) {
+
+            System.out.println("\nPattern: " + pattern + "\n------------------------------------");
+            
+            dateFormat.applyPattern(pattern);
+            
+            for(String dateStr : dateStrArr) {
+                
+//                instance.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+
+                Date date = null;
+                try{
+                    date = dateFormat.parse(dateStr); 
+                }catch(ParseException e) {
+//                    System.err.println(e.toString());
+                }
+System.out.println("parse(String:"+dateStr+") =\t" + date); 
+                if(date == null) {
+                    continue;
+                }
+System.out.println("format(Date:"+date+") =\t" + dateFormat.format(date));        
+            }
+        }
     }
 }

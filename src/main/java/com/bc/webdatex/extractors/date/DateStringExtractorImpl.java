@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  */
 public class DateStringExtractorImpl implements TextParser<String> {
 
-    private static final Logger logger = Logger.getLogger(DateStringExtractorImpl.class.getName());
+    private static final Logger LOG = Logger.getLogger(DateStringExtractorImpl.class.getName());
 
     private final Pattern isoDatePattern;
     private final Pattern digitDatePattern;

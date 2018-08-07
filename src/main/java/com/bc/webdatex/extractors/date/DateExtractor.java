@@ -20,16 +20,14 @@ import com.bc.webdatex.converters.Converter;
 import com.bc.webdatex.converters.DateTimeConverter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import com.bc.webdatex.extractors.TextParser;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
@@ -37,7 +35,7 @@ import java.util.logging.Logger;
  */
 public class DateExtractor implements TextParser<Date> {
 
-    private static final Logger logger = Logger.getLogger(DateExtractor.class.getName());
+    private static final Logger LOG = Logger.getLogger(DateExtractor.class.getName());
   
     private final Collection<String> dateFormatPatterns;
     private final TimeZone inputTimeZone;
@@ -55,7 +53,8 @@ public class DateExtractor implements TextParser<Date> {
     
     static SimpleDateFormat getDateFormat() {
         SimpleDateFormat dateFormat = new SimpleDateFormatAddTimeIfNone();
-        dateFormat.setLenient(true);
+        final boolean lenientMayCauseFalsePositives = true;
+        dateFormat.setLenient(!lenientMayCauseFalsePositives);
         return dateFormat; 
     }
     
@@ -63,11 +62,7 @@ public class DateExtractor implements TextParser<Date> {
             SimpleDateFormat dateFormat, Collection<String> dateFormatPatterns, 
             TimeZone inputTimeZone, TimeZone outputTimeZone) {
         
-        List<String> allPatterns = new ArrayList<>(dateFormatPatterns.size() + 3);
-        allPatterns.addAll(dateFormatPatterns);
-        allPatterns.addAll(Arrays.asList("MMMM dd',' yyyy", "EEEE',' MMMM dd',' yyyy", 
-                "EEEE',' d MMMM yyyy", "MM/dd/yyyy KK:mm:ss a"));
-        this.dateFormatPatterns = Collections.unmodifiableCollection(allPatterns);
+        this.dateFormatPatterns = Collections.unmodifiableList(new ArrayList(dateFormatPatterns));
         
         this.inputTimeZone = Objects.requireNonNull(inputTimeZone);
         this.outputTimeZone = Objects.requireNonNull(outputTimeZone);
@@ -75,7 +70,7 @@ public class DateExtractor implements TextParser<Date> {
         this.converter = inputTimeZone.equals(outputTimeZone) ?
                 Converter.NO_OP : new DateTimeConverter(inputTimeZone, outputTimeZone);
         
-        this.dateFormat = dateFormat;
+        this.dateFormat = Objects.requireNonNull(dateFormat);
         
         this.timeZoneExtractor = new IsoTimeZoneExtractor();
         
@@ -87,10 +82,8 @@ public class DateExtractor implements TextParser<Date> {
         
         Date output = defaultOutput;
         
-        final String beforeFormat = dateString;
+        final String input = dateString;
         
-        dateString = this.dateStringExtractor.extract(dateString, dateString);
-
         ParseException parseException = null;
         
         for(String dateFormatPattern:dateFormatPatterns) {
@@ -111,9 +104,36 @@ public class DateExtractor implements TextParser<Date> {
             }
         }
         
+        if(output == defaultOutput) {
+            
+            dateString = this.dateStringExtractor.extract(dateString, dateString);
+
+            for(String dateFormatPattern:dateFormatPatterns) {
+
+                try{
+
+                    output = this.extract(dateFormatPattern, dateString);
+
+                    break;
+
+                }catch(ParseException e) {
+
+                    if(parseException  == null) {
+                        parseException = e;
+                    }else{
+                        parseException.addSuppressed(e);
+                    }
+                }
+            }
+        }
+
         if(output == defaultOutput && parseException != null) {
-            logger.log(Level.WARNING, "{0}\nError parsing: {1}, even after formatting to: {2}. DateFormats: {3}",
-                    new Object[]{parseException, beforeFormat, dateString, this.dateFormatPatterns});
+            LOG.log(Level.WARNING, "{0}\nError parsing: {1}, even after formatting to: {2}. DateFormats: {3}",
+                    new Object[]{parseException, input, dateString, this.dateFormatPatterns});
+        }
+        
+        if(LOG.isLoggable(Level.FINER)) {
+            LOG.log(Level.FINER, "Input: {0}, output: {1}", new Object[]{input, output});
         }
         
         return output;
@@ -147,9 +167,9 @@ public class DateExtractor implements TextParser<Date> {
             to = this.format(date_inputTimeZone, outputTimeZone);
         }
         
-        if(logger.isLoggable(Level.FINER)) {
+        if(LOG.isLoggable(Level.FINER)) {
 
-            logger.log(Level.FINER, 
+            LOG.log(Level.FINER, 
                 "TimeZone: {0}, date: {1}, Output TimeZone: {2}, date: {3}", 
                 new Object[]{inputTimeZone.getID(), from, outputTimeZone.getID(), to});
         }
@@ -160,7 +180,7 @@ public class DateExtractor implements TextParser<Date> {
     public Date parse(String dateStr, TimeZone timeZone) throws ParseException {
         dateFormat.setTimeZone(timeZone);
         final Date date = dateFormat.parse(dateStr);
-        logger.finer(() -> "Date str: " + dateStr + ", date: " + date);
+        LOG.finer(() -> "Date str: " + dateStr + ", date: " + date);
         return date;
     }
     

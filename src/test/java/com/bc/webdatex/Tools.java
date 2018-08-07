@@ -160,7 +160,7 @@ System.out.println("Date patterns: "+values);
                 continue;
             }
             
-            List defaults = config.getDefaults().getList(ConfigName.datePatterns);
+            List defaults = config.getDefaultsOrException().getList(ConfigName.datePatterns);
 
 System.out.println("Default dates: "+defaults);                    
 

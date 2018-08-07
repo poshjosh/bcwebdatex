@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.bc.nodelocator.Path;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class NodeExtractorConfigImpl implements Serializable, ExtractionConfig {
 
@@ -37,14 +39,27 @@ public class NodeExtractorConfigImpl implements Serializable, ExtractionConfig {
 
   @Override
   public String[] getDatePatterns(){
-    Object[] arr = this.config.getArray(ConfigName.datePatterns);
-    return this.stringCopyOf(arr);
+    return this.getArrayCombinedWithDefaults(ConfigName.datePatterns);
   }
   
   @Override
   public String[] getUrlDatePatterns(){
-    Object[] arr = this.config.getArray(ConfigName.urlDatePatterns);
-    return this.stringCopyOf(arr);
+    return this.getArrayCombinedWithDefaults(ConfigName.urlDatePatterns);
+  }
+  
+  public String [] getArrayCombinedWithDefaults(Enum en) {
+    final String name = en.name();
+    final JsonConfig defaults = this.config.getDefaultsOr(null);
+    final Object[] arr_0 = defaults.getArray(name);
+    final Object[] arr_1 = this.config.getArray(name);
+    final Set<String> set = new LinkedHashSet<>((arr_0.length + arr_1.length) * 2);
+    for(Object obj_0 : arr_0) {
+        set.add(obj_0.toString());
+    }
+    for(Object obj_1 : arr_1) {
+        set.add(obj_1.toString());
+    }
+    return set.toArray(new String[0]);
   }
   
   @Override

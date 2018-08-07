@@ -15,7 +15,6 @@
  */
 package com.bc.webdatex.extractors.date;
 
-import com.bc.webdatex.extractors.date.DateExtractor;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -37,6 +36,26 @@ public class DateExtractorTest {
         final long offsetMillis = timeZone.getOffset(time);
         System.out.println("Add "+TimeUnit.MILLISECONDS.toMinutes(offsetMillis)+" minutes to UTC time to get time in TimeZone: "+timeZone.getID());
     }
+
+    /**
+     * Test of format method, of class DateExtractor.
+     */
+    @Test
+    public void testExtract() {
+        
+        System.out.println("\nCurrent time");
+        this.print(TimeZone.getDefault(), new Date());
+
+        List patterns = Arrays.asList("yyyy-MM-dd'T'HH:mm:ssX");
+        TimeZone in = TimeZone.getDefault();
+        TimeZone out = TimeZone.getDefault(); // TimeZone.getTimeZone("Asia/Kolkata");
+        
+        TextParser<Date> instance = new DateExtractor(patterns, in, out); 
+
+        final String input = "2018-08-06T17:30:55+00:00";
+        final Date output = instance.extract(input, null);
+        System.out.println("Input: " + input + ", output: " + output);
+    }
     
     /**
      * Test of format method, of class DateExtractor.
@@ -44,8 +63,8 @@ public class DateExtractorTest {
     @Test
     public void testAll() {
         
-System.out.println("\nCurrent time");
-this.print(TimeZone.getDefault(), new Date());
+        System.out.println("\nCurrent time");
+        this.print(TimeZone.getDefault(), new Date());
 
         List patterns = Arrays.asList("MM/dd/yyyy KK:mm a", "MM/dd/yy HH:mm a", "yyyy MMM dd HH:mm:ss", "MMMM dd, yyyy HH:mm");
         TimeZone in = TimeZone.getDefault();

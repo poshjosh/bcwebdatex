@@ -1,6 +1,7 @@
 package com.bc.webdatex.context;
 
 import com.bc.json.config.JsonConfig;
+import com.bc.json.config.SimpleJsonConfig;
 import com.bc.nodelocator.ConfigName;
 import com.bc.webdatex.extractors.node.AttributesExtractor;
 import com.bc.webdatex.extractors.node.AttributesExtractorImpl;
@@ -14,43 +15,34 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import org.htmlparser.NodeFilter;
 import java.util.logging.Logger;
 
-public class CapturerContextImpl implements ExtractionContext, Serializable
-{
+public class ExtractionContextImpl implements ExtractionContext, Serializable {
 
-  private transient static final Logger LOG = Logger.getLogger(CapturerContextImpl.class.getName());
+  private transient static final Logger LOG = Logger.getLogger(ExtractionContextImpl.class.getName());
   
   private JsonConfig config;
-  private ExtractionConfig _settings;
+  private ExtractionConfig extractionConfig;
   
-  public CapturerContextImpl() {
-    this(null);
+  public ExtractionContextImpl() {
+    this(new SimpleJsonConfig());
   }
   
-  public CapturerContextImpl(JsonConfig config) {
-    this.config = config;
-  }
-  
-  @Override
-  public ExtractionConfig getExtractionConfig() {
-    if (this._settings == null) {
-      this._settings = new NodeExtractorConfigImpl(getConfig());
-    }
-    return this._settings;
+  public ExtractionContextImpl(JsonConfig config) {
+    this.config = Objects.requireNonNull(config);
+    this.extractionConfig = new NodeExtractorConfigImpl(config);
   }
   
   @Override
-  public AttributesExtractor getAttributesExtractor(Object id)
-  {
+  public AttributesExtractor getAttributesExtractor(Object id){
     return getAttributesExtractor(getConfig(), id);
   }
   
-  public AttributesExtractor getAttributesExtractor(JsonConfig config, Object id)
-  {
+  public AttributesExtractor getAttributesExtractor(JsonConfig config, Object id) {
     String[] toExtract = getArray(getConfig(), id, ConfigName.attributesToExtract);
     
     if (toExtract == null) {
@@ -69,8 +61,12 @@ public class CapturerContextImpl implements ExtractionContext, Serializable
   }
   
   @Override
-  public JsonConfig getConfig()
-  {
+  public ExtractionConfig getExtractionConfig() {
+    return this.extractionConfig;
+  }
+  
+  @Override
+  public JsonConfig getConfig() {
     return this.config;
   }
   

@@ -18,7 +18,7 @@ package com.bc.webdatex.extractors.date;
 import com.bc.webdatex.filters.AcceptDateHasTime;
 import com.bc.webdatex.filters.Filter;
 import java.text.DateFormatSymbols;
-import java.text.ParsePosition;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -52,9 +52,13 @@ public class SimpleDateFormatAddTimeIfNone extends SimpleDateFormat {
     }
 
     @Override
-    public Date parse(String text, ParsePosition pos) {
+    public Date parse(String text) throws ParseException {
 
-        Date date = super.parse(text, pos);
+        final Date date = super.parse(text);
+        
+        LOG.finer(() -> "Pattern: "+this.toPattern()+", input: " + text + ", date: " + date);
+        
+        final Date output;
 
         if(date != null && !this.acceptDateHasTime.test(date)) {
             
@@ -70,16 +74,20 @@ public class SimpleDateFormatAddTimeIfNone extends SimpleDateFormat {
             this.mCalendar.set(Calendar.MINUTE, MINUTES);
             this.mCalendar.set(Calendar.SECOND, SECONDS);
             
-            Date update = this.mCalendar.getTime();
+            final Date update = this.mCalendar.getTime();
             
             if(LOG.isLoggable(Level.FINE)) {
                 LOG.log(Level.FINE, "Added time: {0}:{1}. From: {2} to {3}", 
                     new Object[]{HOURS, MINUTES, date, update});
             }
 
-            date = update;
+            output = update;
+            
+        }else{
+            
+            output = date;
         }
         
-        return date;
+        return output;
     }
 }

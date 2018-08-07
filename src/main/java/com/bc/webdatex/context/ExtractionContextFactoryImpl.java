@@ -47,7 +47,7 @@ public class ExtractionContextFactoryImpl implements ExtractionContextFactory {
   @Override
   public ExtractionContext getContext(String name) {
     try{
-      return getContext(configService.getConfig(name, null));
+      return getContext(configService.getConfig(name, configService.createConfig(name)));
     }catch(IOException | ParseException e) {
       throw new RuntimeException(e);  
     }
@@ -82,11 +82,11 @@ public class ExtractionContextFactoryImpl implements ExtractionContextFactory {
   }
   
   protected ExtractionContext newDefaultContext(JsonConfig config) {
-    return new CapturerContextImpl(config);
+    return new ExtractionContextImpl(config);
   }
   
   private String getClassName(String sitename){
-    String packageName = CapturerContextImpl.class.getPackage().getName();
+    String packageName = ExtractionContextImpl.class.getPackage().getName();
     StringBuilder builder = new StringBuilder(packageName);
     builder.append('.').append(toTitleCase(sitename)).append("Context");
     return builder.toString();
